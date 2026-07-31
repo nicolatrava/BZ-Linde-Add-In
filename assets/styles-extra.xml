@@ -1,0 +1,7 @@
+<!-- Zusatz-Stile, die die Muster-Vorlage nicht mitbringt, das Add-In aber braucht.
+     Werden von build.py vor </w:styles> in assets/styles.xml eingefügt.
+     Sie folgen exakt dem Muster von "Verzeichnis1" aus der Vorlage, damit ein
+     Inhaltsverzeichnis über die Ebenen 1-3 gleich aussieht wie Ebene 1. -->
+<w:style w:type="paragraph" w:styleId="Verzeichnis2"><w:name w:val="toc 2"/><w:basedOn w:val="Standard"/><w:next w:val="Standard"/><w:autoRedefine/><w:semiHidden/><w:pPr><w:ind w:left="397"/><w:tabs><w:tab w:val="left" w:pos="1077"/><w:tab w:val="right" w:leader="dot" w:pos="9629"/></w:tabs></w:pPr></w:style>
+<w:style w:type="paragraph" w:styleId="Verzeichnis3"><w:name w:val="toc 3"/><w:basedOn w:val="Standard"/><w:next w:val="Standard"/><w:autoRedefine/><w:semiHidden/><w:pPr><w:ind w:left="1077"/><w:tabs><w:tab w:val="left" w:pos="1758"/><w:tab w:val="right" w:leader="dot" w:pos="9629"/></w:tabs></w:pPr></w:style>
+<w:style w:type="character" w:styleId="Hyperlink"><w:name w:val="Hyperlink"/><w:basedOn w:val="Absatz-Standardschriftart"/><w:uiPriority w:val="99"/><w:semiHidden/><w:unhideWhenUsed/><w:rPr><w:color w:val="0563C1"/><w:u w:val="single"/></w:rPr></w:style>
