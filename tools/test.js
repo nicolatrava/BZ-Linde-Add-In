@@ -62,16 +62,16 @@ function t(name, got, exp) {
 
 const S = sandbox;
 
-/* ── Bedienlogik ──────────────────────────────────────────────────────────── */
+/* ── Bedienlogik: jeder Umschalter muss fehlerfrei durchlaufen ────────────── */
+['hoch', 'quer'].forEach(function (f) {
+  ['intern', 'extern', 'brief'].forEach(function (ty) {
+    let err = null;
+    try { S.setFmt(f); S.setTyp(ty); } catch (e) { err = e.message; }
+    t('Umschalten ' + f + '/' + ty, err, null);
+  });
+});
+t('Brief erzwingt A4 Hoch', (S.setFmt('quer'), S.setTyp('brief'), S.fmt), 'hoch');
 S.setFmt('hoch'); S.setTyp('intern');
-S.toggleInhalt('titel');  t('A4 Hoch: Titelblatt wählbar', !!S.inhaltSet.titel, true);
-S.setFmt('quer');         t('A4 Quer: Titelblatt wird abgewählt', !!S.inhaltSet.titel, false);
-S.toggleInhalt('titel');  t('A4 Quer: Titelblatt bleibt gesperrt', !!S.inhaltSet.titel, false);
-S.toggleInhalt('ivz');    t('A4 Quer: Inhaltsverzeichnis wählbar', !!S.inhaltSet.ivz, true);
-S.setTyp('brief');        t('Brief: Inhaltsverzeichnis wird abgewählt', !!S.inhaltSet.ivz, false);
-                          t('Brief erzwingt A4 Hoch', S.fmt, 'hoch');
-S.toggleInhalt('muster'); t('Brief: Musterinhalt wählbar', !!S.inhaltSet.muster, true);
-S.setTyp('intern');
 
 /* ── Kopfzeile ────────────────────────────────────────────────────────────── */
 const hdr = S.mkHdrPkg(false, true, 'Sekretariat / C 3.4.2 Kreditoren', 'Ordner Kreditoren');
@@ -91,17 +91,7 @@ t('Fusszeile: Wingdings-Trennzeichen', ftr.indexOf('w:sym w:font="Wingdings" w:c
 t('Fusszeile: Seitenzahlen', ftr.indexOf('NUMPAGES') > 0, true);
 const ftrB = S.mkFtrPkg(false, S.ORG_DEFAULT, '', '', false);
 t('Brief-Fusszeile: ohne Dateinamen', ftrB.indexOf('FILENAME'), -1);
-
-/* ── Inhalte ──────────────────────────────────────────────────────────────── */
-const c = S.mkContentPkg(['titel', 'ivz', 'muster'], false);
-t('Inhalt: styles.xml mitgeliefert', c.indexOf('/word/styles.xml') > 0, true);
-t('Inhalt: numbering.xml mitgeliefert', c.indexOf('/word/numbering.xml') > 0, true);
-t('Inhalt: Inhaltsverzeichnis-Feld', c.indexOf('TOC \\o "1-3"') > 0, true);
-t('Inhalt: zwei Seitenumbrüche', (c.match(/w:br w:type="page"/g) || []).length, 2);
-const ids = (c.match(/<wp:docPr[^>]*\bid="(\d+)"/g) || []);
-t('Inhalt: docPr-IDs eindeutig', new Set(ids).size, ids.length);
-t('Nur Titelblatt: Umbruch dahinter', (S.mkContentPkg(['titel'], false).match(/w:br w:type="page"/g) || []).length, 1);
-t('Nichts gewählt: kein Paket', S.mkContentPkg([], false), null);
+t('Brief-Kopfzeile: nur Logo, keine Tabelle', S.mkBriefHdrPkg().indexOf('<w:tbl>'), -1);
 
 /* ── Seitengeometrie ──────────────────────────────────────────────────────── */
 const sample =
@@ -121,13 +111,10 @@ t('Geometrie: Querformat', quer.indexOf('w:orient="landscape"') > 0, true);
 t('Geometrie: ohne sectPr wird eines angelegt',
   S.setPageGeometry('<w:document><w:body><w:p/></w:body></w:document>', false, false).indexOf('<w:sectPr>') > 0, true);
 
-console.log(failed ? '\n' + failed + ' Test(s) fehlgeschlagen' : '\nalle Tests ok');
-process.exitCode = failed ? 1 : 0;
-
 /* ── Platzhalter in der Kopfzeile ─────────────────────────────────────────── */
 const hdrLeer = S.mkHdrPkg(false, true, '', '');
 t('Kopfzeile leer: Platzhalter Prozessname', hdrLeer.indexOf('Prozessname') > 0, true);
 t('Kopfzeile leer: Platzhalter Ablageort', hdrLeer.indexOf('Ablageort') > 0, true);
 t('Extern: auch ohne Platzhalter', S.mkHdrPkg(false, false, '', '').indexOf('Prozessname'), -1);
-console.log(failed ? failed + ' Test(s) fehlgeschlagen' : 'Platzhalter ok');
+console.log(failed ? '\n' + failed + ' Test(s) fehlgeschlagen' : '\nalle Tests ok');
 process.exitCode = failed ? 1 : 0;

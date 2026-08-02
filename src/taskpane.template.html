@@ -8,7 +8,6 @@
 <meta http-equiv="Expires" content="0"/>
 <title>Linde Vorlagen</title>
 <script src="https://appsforoffice.microsoft.com/lib/1.1/hosted/office.js"></script>
-<script src="msal-browser.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--green:#00A651;--green-dark:#008c44;--green-light:#f1faf4;--gray:#f5f5f5;--border:#e8e8e8}
@@ -116,21 +115,9 @@ details.adr[open]>summary:before{content:'\25BE '}
   </div>
   <div class="sep" id="fmt-sep"></div>
 
-  <!-- Step 3: Inhalt -->
-  <div class="step" id="inh-step" style="margin-top:14px">
-    <div class="step-title"><span class="sn">3</span>Inhalt einf&uuml;gen</div>
-    <div class="toggle-row" id="inh-row">
-      <button class="tbtn" id="btn-muster" onclick="toggleInhalt('muster')">Musterinhalt</button>
-      <button class="tbtn" id="btn-ivz"    onclick="toggleInhalt('ivz')">Inhaltsverz.</button>
-      <button class="tbtn" id="btn-titel"  onclick="toggleInhalt('titel')">Titelblatt</button>
-    </div>
-    <div class="hint" style="margin-top:6px" id="inh-hint"></div>
-  </div>
-  <div class="sep" id="inh-sep"></div>
-
-  <!-- Step 4: Kopfzeile und Metadaten -->
+  <!-- Step 3: Kopfzeile und Metadaten -->
   <div class="step" id="meta-step" style="margin-top:14px">
-    <div class="step-title"><span class="sn">4</span>Kopfzeile</div>
+    <div class="step-title"><span class="sn">3</span>Kopfzeile</div>
 
     <!-- Die zwei Zeilen rechts in der Kopfzeile – nur bei internen Dokumenten -->
     <div id="pname-fields">
@@ -156,39 +143,6 @@ details.adr[open]>summary:before{content:'\25BE '}
         <span>Neue Version (Versionsdatum auf heute setzen)</span>
       </label>
       <div class="profile-hint">Nur anklicken, wenn die Vorlage inhaltlich &auml;ndert. Beim reinen Ausf&uuml;llen leer lassen.</div>
-    </div>
-
-    <!-- Brief-Felder -->
-    <div id="brief-fields" class="hidden">
-      <div class="profile-header">
-        <span class="profile-label">Mein Profil</span>
-        <span id="profile-badge" class="profile-badge hidden">gespeichert &#10003;</span>
-        <button class="profile-reset hidden" id="profile-reset" onclick="clearBriefProfile()">zur&uuml;cksetzen</button>
-      </div>
-      <div class="field">
-        <label>Vorname Name</label>
-        <input type="text" id="brief-name" placeholder="z.B. Maria Muster"/>
-      </div>
-      <div class="field">
-        <label>Funktion</label>
-        <input type="text" id="brief-funktion" placeholder="z.B. Leiterin Pflege"/>
-      </div>
-      <div class="row2">
-        <div class="field">
-          <label>Telefon</label>
-          <input type="text" id="brief-telefon" placeholder="z.B. 041 984 29 29"/>
-        </div>
-        <div class="field">
-          <label>E-Mail</label>
-          <input type="text" id="brief-email" placeholder="z.B. m.muster@bz-linde.ch"/>
-        </div>
-      </div>
-      <div class="field">
-        <label>Betreff</label>
-        <input type="text" id="brief-betreff" placeholder="z.B. Ihre Anfrage vom 12. Juni"/>
-      </div>
-      <button type="button" class="ad-btn" id="ad-load" onclick="loadFromActiveDirectory(true)">Aus Active Directory laden</button>
-      <div class="profile-hint" id="profile-hint">Wird nach dem ersten Anwenden automatisch gespeichert.</div>
     </div>
 
     <!-- Adresse der Fusszeile: aufklappbar, vorbelegt mit den Linde-Daten -->
@@ -232,7 +186,7 @@ details.adr[open]>summary:before{content:'\25BE '}
   <div class="sep"></div>
 
   <div class="step" style="margin-top:14px">
-    <div class="step-title"><span class="sn">5</span>Aktualisieren</div>
+    <div class="step-title"><span class="sn">4</span>Aktualisieren</div>
     <button type="button" class="ad-btn" onclick="updateFooterMeta()">Fusszeile aktualisieren (Name &amp; Datum)</button>
     <button type="button" class="ad-btn" onclick="updateTOC()">Inhaltsverzeichnis / Felder aktualisieren</button>
     <div class="profile-hint">Aktualisiert Adresse, Dokumentname und Datum in der Fusszeile bzw. alle Felder im Dokument &ndash; ohne sonst etwas zu ver&auml;ndern. Version und K&uuml;rzel bleiben stehen.</div>
@@ -251,14 +205,8 @@ details.adr[open]>summary:before{content:'\25BE '}
    Eingebettete Daten
    LOGO_PNG_B64 : assets/logo-dok.png (aus Muster_Dokument_A4_hoch.docx
                   freigestellt, exakt der Bildausschnitt der Original-Kopfzeile)
-   STYLES_XML / NUMBERING_XML : styles.xml und numbering.xml der Muster-Vorlage.
-                  Sie reisen mit jedem eingefügten Inhalt mit, damit «Titel»,
-                  «Überschrift 1-4», «Aufzählung» und «Verzeichnis 1-3» auch in
-                  einem leeren Word-Dokument sofort richtig aussehen.
    ═══════════════════════════════════════════════════════════════════════════ */
 var LOGO_PNG_B64 = '@@LOGO_PNG_B64@@';
-var STYLES_XML    = '@@STYLES_XML@@';
-var NUMBERING_XML = '@@NUMBERING_XML@@';
 
 /* Seitenverhältnis des Logos (956 x 371 px) – Breite wird immer daraus
    gerechnet, damit es in keiner Grösse verzerrt. */
@@ -284,7 +232,6 @@ var ORG_DEFAULT = {
    ═══════════════════════════════════════════════════════════════════════════ */
 var typ    = 'intern';   /* 'intern' | 'extern' | 'brief' */
 var fmt    = 'hoch';     /* 'hoch'   | 'quer' */
-var inhaltSet = {};      /* {muster:bool, ivz:bool, titel:bool} */
 var _applyN = 0;
 
 function setTyp(v){
@@ -297,12 +244,9 @@ function setTyp(v){
   document.getElementById('fmt-step').className = 'step' + (isBrief ? ' hidden' : '');
   document.getElementById('fmt-sep').className  = 'sep'  + (isBrief ? ' hidden' : '');
   if(isBrief){ fmt = 'hoch'; }
-  document.getElementById('btn-muster').textContent = isBrief ? 'Brief-Musterinhalt' : 'Musterinhalt';
   /* Kopfzeilen-Felder nur bei internen Dokumenten */
   document.getElementById('pname-fields').className = (v==='intern' ? '' : 'hidden');
   document.getElementById('ver-fields').className   = (isBrief ? 'hidden' : '');
-  document.getElementById('brief-fields').className = (isBrief ? '' : 'hidden');
-  applyInhaltVisibility();
 }
 
 function setFmt(v){
@@ -310,42 +254,6 @@ function setFmt(v){
   ['hoch','quer'].forEach(function(k){
     document.getElementById('btn-'+k).className = 'tbtn' + (k===v ? ' on' : '');
   });
-  applyInhaltVisibility();
-}
-
-/* Welche Inhalts-Bausteine sind in der aktuellen Kombination überhaupt
-   möglich? Brief: nur der Brief-Musterinhalt. A4 Quer: kein Titelblatt.
-   Ein ausgeblendeter Baustein wird auch abgewählt. */
-function applyInhaltVisibility(){
-  var isBrief = (typ === 'brief');
-  var sichtbar = { muster:true, ivz: !isBrief, titel: !isBrief && fmt === 'hoch' };
-  ['muster','ivz','titel'].forEach(function(k){
-    var btn = document.getElementById('btn-'+k);
-    btn.style.display = sichtbar[k] ? '' : 'none';
-    if(!sichtbar[k]) inhaltSet[k] = false;
-    btn.className = 'tbtn' + (inhaltSet[k] ? ' on' : '');
-  });
-  updateInhaltHint();
-}
-
-var INH_HINTS = {
-  muster: 'Musterinhalt',
-  ivz:    'Inhaltsverzeichnis',
-  titel:  'Titelblatt (nur A4 Hoch)'
-};
-
-function toggleInhalt(v){
-  var btn = document.getElementById('btn-'+v);
-  if(btn.style.display === 'none') return;   /* in dieser Kombination nicht möglich */
-  inhaltSet[v] = !inhaltSet[v];
-  btn.className = 'tbtn' + (inhaltSet[v] ? ' on' : '');
-  updateInhaltHint();
-}
-
-function updateInhaltHint(){
-  var sel = Object.keys(inhaltSet).filter(function(k){ return inhaltSet[k]; });
-  var hints = sel.map(function(k){ return INH_HINTS[k] || k; });
-  document.getElementById('inh-hint').textContent = hints.join(' + ');
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -363,6 +271,8 @@ function val(id){
 function pad2(n){ return (n < 10 ? '0' : '') + n; }
 
 /* CI-Farben und -Grössen der Muster-Vorlage */
+var FONT     = 'Arial';   /* Schrift der Vorlage – Kopf- und Fusszeile setzen sie
+                             ausdrücklich, sonst erben sie die des Dokuments */
 var C_TEXT   = '808080';   /* Grau für Kopf- und Fusszeile */
 var C_LINE   = '999999';   /* Trennlinie Kopf-/Fusszeile   */
 var C_GREEN  = '00A651';   /* Linde-Grün                    */
@@ -378,6 +288,7 @@ var SZ_FTR   = 16;         /*  8 pt */
 function rPr(o){
   o = o || {};
   var s = '';
+  if(o.font)  s += '<w:rFonts w:ascii="'+o.font+'" w:hAnsi="'+o.font+'" w:cs="'+o.font+'"/>';
   if(o.b)     s += '<w:b/>';
   if(o.i)     s += '<w:i/>';
   if(o.color) s += '<w:color w:val="'+o.color+'"/>';
@@ -513,22 +424,13 @@ function PKG_ROOT_RELS(){
     '</Relationships></pkg:xmlData></pkg:part>';
 }
 
-/* Beziehungen von document.xml. imgRels: [{id,target}]. withStyles fügt
-   styles.xml und numbering.xml hinzu (nur für Inhalts-Pakete nötig). */
-function PKG_RELS(imgRels, withStyles){
+/* Beziehungen von document.xml – nur das eingebettete Logo. */
+function PKG_RELS(imgRels){
   var inner = (imgRels || []).map(function(x){
     return '<Relationship Id="'+x.id+'" ' +
       'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" ' +
       'Target="media/'+x.target+'"/>';
   }).join('');
-  if(withStyles){
-    inner += '<Relationship Id="rIdStyles" ' +
-      'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" ' +
-      'Target="styles.xml"/>' +
-      '<Relationship Id="rIdNumbering" ' +
-      'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" ' +
-      'Target="numbering.xml"/>';
-  }
   return '<pkg:part pkg:name="/word/_rels/document.xml.rels" ' +
     'pkg:contentType="application/vnd.openxmlformats-package.relationships+xml">' +
     '<pkg:xmlData><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
@@ -543,16 +445,6 @@ function PKG_DOCUMENT(bodyXml){
     'pkg:contentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml">' +
     '<pkg:xmlData><w:document '+DOC_NS+'><w:body>'+bodyXml+'</w:body></w:document>' +
     '</pkg:xmlData></pkg:part>';
-}
-function PKG_STYLES(){
-  return '<pkg:part pkg:name="/word/styles.xml" ' +
-    'pkg:contentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml">' +
-    '<pkg:xmlData>'+STYLES_XML+'</pkg:xmlData></pkg:part>';
-}
-function PKG_NUMBERING(){
-  return '<pkg:part pkg:name="/word/numbering.xml" ' +
-    'pkg:contentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml">' +
-    '<pkg:xmlData>'+NUMBERING_XML+'</pkg:xmlData></pkg:part>';
 }
 
 /* ── Bilder ───────────────────────────────────────────────────────────────── */
@@ -584,21 +476,6 @@ function logoAnchor(rid, docprId, cy, posV){
     '<wp14:sizeRelH relativeFrom="page"><wp14:pctWidth>0</wp14:pctWidth></wp14:sizeRelH>' +
     '<wp14:sizeRelV relativeFrom="page"><wp14:pctHeight>0</wp14:pctHeight></wp14:sizeRelV>' +
     '</wp:anchor></w:drawing>';
-}
-/* Logo im Textfluss (Titelblatt) */
-function logoInline(rid, docprId, cy){
-  var cx = Math.round(cy * LOGO_RATIO);
-  return '<w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0">' +
-    '<wp:extent cx="'+cx+'" cy="'+cy+'"/><wp:effectExtent l="0" t="0" r="0" b="0"/>' +
-    '<wp:docPr id="'+docprId+'" name="Logo"/>' +
-    '<wp:cNvGraphicFramePr><a:graphicFrameLocks noChangeAspect="1"/></wp:cNvGraphicFramePr>' +
-    '<a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
-    '<pic:pic><pic:nvPicPr><pic:cNvPr id="0" name="Logo"/>' +
-    '<pic:cNvPicPr><a:picLocks noChangeAspect="1" noChangeArrowheads="1"/></pic:cNvPicPr></pic:nvPicPr>' +
-    '<pic:blipFill><a:blip r:embed="'+rid+'"/><a:srcRect/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>' +
-    '<pic:spPr bwMode="auto"><a:xfrm><a:off x="0" y="0"/><a:ext cx="'+cx+'" cy="'+cy+'"/></a:xfrm>' +
-    '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/><a:ln><a:noFill/></a:ln></pic:spPr>' +
-    '</pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing>';
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -649,15 +526,15 @@ function hdrBody(isQuer, showMeta, kopfZeile1, kopfZeile2, logoRid, docprId){
   /* Leer gelassene Felder bekommen den Platzhalter, so wie ihn die
      Muster-Vorlage zeigt – die Kopfzeile ist dann nie leer und man sieht
      im Dokument, was noch auszufüllen ist. */
-  var row1 = P(showMeta ? R(kopfZeile1 || 'Prozessname', {b:true, color:C_TEXT, sz:SZ_HDR}) : '',
-        {jc:'right', before:0, after:0, rPr:{b:true, color:C_TEXT, sz:SZ_HDR}});
-  var row2 = P(showMeta ? R(kopfZeile2 || 'Ablageort', {color:C_TEXT, sz:SZ_HDR}) : '',
-        {jc:'right', before:0, after:0, rPr:{color:C_TEXT, sz:SZ_HDR}});
+  var row1 = P(showMeta ? R(kopfZeile1 || 'Prozessname', {b:true, font:FONT, color:C_TEXT, sz:SZ_HDR}) : '',
+        {jc:'right', before:0, after:0, rPr:{b:true, font:FONT, color:C_TEXT, sz:SZ_HDR}});
+  var row2 = P(showMeta ? R(kopfZeile2 || 'Ablageort', {font:FONT, color:C_TEXT, sz:SZ_HDR}) : '',
+        {jc:'right', before:0, after:0, rPr:{font:FONT, color:C_TEXT, sz:SZ_HDR}});
 
   /* Die linke Spalte bleibt leer und hält den Platz für das Logo frei. Ihre
      Absatzmarke ist – wie in der Vorlage – 20 pt gross; daraus ergibt sich die
      Höhe der Kopfzeilen-Tabelle und damit die Lage des Logos darüber. */
-  var leer = P('', {before:0, after:0, rPr:{b:true, color:C_TEXT, sz:40}});
+  var leer = P('', {before:0, after:0, rPr:{b:true, font:FONT, color:C_TEXT, sz:40}});
   var tbl = TBL(g.hdr, [
     [ {vMerge:'restart', xml:leer}, {xml:row1} ],
     [ {vMerge:'cont',    xml:leer}, {xml:row2} ]
@@ -676,7 +553,7 @@ function mkHdrPkg(isQuer, showMeta, z1, z2){
   var rid = 'rIdLogo' + n;
   var fn  = 'logo_' + n + '.png';
   return PKG_OPEN() + PKG_ROOT_RELS() +
-    PKG_RELS([{id:rid, target:fn}], false) +
+    PKG_RELS([{id:rid, target:fn}]) +
     PKG_IMG(fn, 'image/png', LOGO_PNG_B64) +
     PKG_DOCUMENT(hdrBody(isQuer, showMeta, z1, z2, rid, (n % 500) + 1)) +
     PKG_CLOSE();
@@ -693,7 +570,7 @@ function mkBriefHdrPkg(){
       {before:0, after:0, rPr:{sz:4}}) +
     P('', {before:0, after:0, rPr:{sz:4}});
   return PKG_OPEN() + PKG_ROOT_RELS() +
-    PKG_RELS([{id:rid, target:fn}], false) +
+    PKG_RELS([{id:rid, target:fn}]) +
     PKG_IMG(fn, 'image/png', LOGO_PNG_B64) +
     PKG_DOCUMENT(body) + PKG_CLOSE();
 }
@@ -742,8 +619,8 @@ function heuteLang(){
 /* Adressblock der Fusszeile – zwei Zeilen wie im Original, Trennzeichen ist
    die Wingdings-Raute. */
 function ftrAdresse(org){
-  var o = {color:C_TEXT, sz:SZ_FTR};
-  var ob = {b:true, color:C_TEXT, sz:SZ_FTR};
+  var o = {font:FONT, color:C_TEXT, sz:SZ_FTR};
+  var ob = {b:true, font:FONT, color:C_TEXT, sz:SZ_FTR};
   var line1 =
     R(org.name, ob) + R(' ', o) + SYM(o) + R(' ' + org.strasse + ' ', o) + SYM(o) +
     R(' ' + org.plz + ' ' + org.ort, o);
@@ -762,18 +639,18 @@ function ftrAdresse(org){
 /* Rechte Spalte: «Seite X von Y» fett, darunter Dateiname / Speicherdatum
    [/ Version] [/ Kürzel]. */
 function ftrMeta(verDatum, kuerzel, withFile){
-  var ob = {b:true, color:C_TEXT, sz:SZ_FTR};
-  var o  = {color:C_TEXT, sz:SZ_FTR};
+  var ob = {b:true, font:FONT, color:C_TEXT, sz:SZ_FTR};
+  var o  = {font:FONT, color:C_TEXT, sz:SZ_FTR};
   var seite = R('Seite ', ob) +
-    FLD('PAGE \\* MERGEFORMAT', '1', {b:true, color:C_TEXT, sz:SZ_FTR}) +
+    FLD('PAGE \\* MERGEFORMAT', '1', {b:true, font:FONT, color:C_TEXT, sz:SZ_FTR}) +
     R(' von ', ob) +
-    FLD('NUMPAGES \\* MERGEFORMAT', '1', {b:true, color:C_TEXT, sz:SZ_FTR});
+    FLD('NUMPAGES \\* MERGEFORMAT', '1', {b:true, font:FONT, color:C_TEXT, sz:SZ_FTR});
   var p1 = P(seite, {jc:'right', before:0, after:0, rPr:ob});
   if(!withFile) return p1;
   var zeile2 =
-    FLD('FILENAME \\* MERGEFORMAT', docName(), {color:C_TEXT, sz:SZ_FTR, dirty:true}) +
+    FLD('FILENAME \\* MERGEFORMAT', docName(), {font:FONT, color:C_TEXT, sz:SZ_FTR, dirty:true}) +
     R(' / ', o) +
-    FLD('SAVEDATE \\@ "dd.MM.yyyy" \\* MERGEFORMAT', heuteLang(), {color:C_TEXT, sz:SZ_FTR, dirty:true}) +
+    FLD('SAVEDATE \\@ "dd.MM.yyyy" \\* MERGEFORMAT', heuteLang(), {font:FONT, color:C_TEXT, sz:SZ_FTR, dirty:true}) +
     (verDatum ? R(' / Version: ' + verDatum, o) : '') +
     (kuerzel  ? R(' / Kürzel: ' + kuerzel, o) : '');
   return p1 + P(zeile2, {jc:'right', before:0, after:0, rPr:o});
@@ -799,204 +676,6 @@ function ftrBody(isQuer, org, verDatum, kuerzel, withFile){
 function mkFtrPkg(isQuer, org, verDatum, kuerzel, withFile){
   return PKG_OPEN() + PKG_ROOT_RELS() +
     PKG_DOCUMENT(ftrBody(isQuer, org, verDatum, kuerzel, withFile)) + PKG_CLOSE();
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   Inhalte
-   ═══════════════════════════════════════════════════════════════════════════ */
-/* Rahmen für die Inhalts-Tabellen: dünne graue Linien. */
-function gridBorders(){
-  return '<w:top w:val="single" w:sz="4" w:space="0" w:color="'+C_LINE+'"/>' +
-    '<w:left w:val="none" w:sz="0" w:space="0" w:color="auto"/>' +
-    '<w:bottom w:val="single" w:sz="4" w:space="0" w:color="'+C_LINE+'"/>' +
-    '<w:right w:val="none" w:sz="0" w:space="0" w:color="auto"/>' +
-    '<w:insideH w:val="single" w:sz="4" w:space="0" w:color="'+C_LINE+'"/>' +
-    '<w:insideV w:val="none" w:sz="0" w:space="0" w:color="auto"/>';
-}
-function cellP(text, o){
-  return P(text ? R(text, o) : '', {before:40, after:40, rPr:o});
-}
-/* Tabelle mit Kopfzeile. cols: Breiten, head: Texte, rows: Array von Text-Arrays. */
-function contentTable(cols, head, rows){
-  var all = [];
-  all.push(head.map(function(t){ return {xml: cellP(t, {b:true}), shd:'F2F2F2'}; }));
-  for(var i=0;i<rows.length;i++){
-    all.push(rows[i].map(function(t){ return {xml: cellP(t)}; }));
-  }
-  return TBL(cols, all, {borders: gridBorders(), headerRow: true, cellMar: false});
-}
-
-/* Die Vorlage arbeitet mit Absatzstilen ohne Abstände. Für den Musterinhalt
-   setzen wir die Abstände direkt am Absatz – die Stile selbst bleiben damit
-   unverändert genau so, wie sie in der Vorlage stehen. */
-var H_SPACING = [{before:280, after:80}, {before:220, after:80},
-                 {before:200, after:80}, {before:180, after:80}];
-function H(text, lvl){
-  var s = H_SPACING[lvl-1];
-  return P(R(text), {style:'berschrift'+lvl, keepNext:true, before:s.before, after:s.after});
-}
-function T(text){ return P(R(text), {before:0, after:80}); }
-function BUL(text){ return P(R(text), {style:'Aufzhlung', before:0, after:80}); }
-
-function bodyMusterinhalt(isQuer){
-  var w = (isQuer ? GEO.quer : GEO.hoch).width;
-  var titel = P(R('Titel des Dokuments'), {style:'Titel', before:0, after:280});
-
-  if(isQuer){
-    var q = [Math.round(w*0.08), Math.round(w*0.30), Math.round(w*0.42)];
-    q.push(w - q[0] - q[1] - q[2]);
-    return titel +
-      H('Ausgangslage', 1) +
-      T('Kurz beschreiben, worum es in diesem Dokument geht und für wen es gilt.') +
-      H('Übersicht', 1) +
-      contentTable(q, ['Nr.', 'Was', 'Wie', 'Wer'],
-        [['1','','',''], ['2','','',''], ['3','','',''], ['4','','','']]) +
-      P('', {before:0, after:0});
-  }
-
-  var c4 = [Math.round(w*0.10), Math.round(w*0.30), Math.round(w*0.38)];
-  c4.push(w - c4[0] - c4[1] - c4[2]);
-  var c3 = [Math.round(w*0.14), Math.round(w*0.20), Math.round(w*0.48)];
-  c3.push(w - c3[0] - c3[1] - c3[2]);
-
-  return titel +
-    H('Ausgangslage', 1) +
-    T('Kurz beschreiben, warum es dieses Dokument gibt und welches Bedürfnis es abdeckt.') +
-    H('Zweck', 2) +
-    T('Was soll mit diesem Dokument erreicht werden?') +
-    BUL('Erster Punkt') + BUL('Zweiter Punkt') + BUL('Dritter Punkt') +
-    H('Geltungsbereich', 2) +
-    T('Für wen und ab wann gilt dieses Dokument?') +
-    H('Vorgehen', 1) +
-    H('Ablauf', 2) +
-    T('Die einzelnen Schritte in der richtigen Reihenfolge:') +
-    contentTable(c4, ['Nr.', 'Was', 'Wie', 'Wer'],
-      [['1','','',''], ['2','','',''], ['3','','','']]) +
-    P('', {before:0, after:0}) +
-    H('Zuständigkeiten', 3) +
-    T('Wer ist verantwortlich, wer wird informiert?') +
-    H('Mitgeltende Dokumente', 1) +
-    BUL('Verweis auf Formulare, Checklisten oder Weisungen') +
-    BUL('Weiterer Verweis') +
-    H('Änderungsnachweis', 1) +
-    contentTable(c3, ['Version', 'Datum', 'Änderung', 'Kürzel'],
-      [['1.0', heuteLang(), 'Erstellung', ''], ['', '', '', '']]) +
-    P('', {before:0, after:0});
-}
-
-function bodyInhaltsverzeichnis(){
-  return P(R('Inhaltsverzeichnis', {b:true, sz:28}), {before:0, after:240, rPr:{b:true, sz:28}}) +
-    P(FLD('TOC \\o "1-3" \\h \\z \\u',
-          'Rechtsklick ins Verzeichnis → Felder aktualisieren',
-          {dirty:true}), {before:0, after:0});
-}
-
-function bodyTitelblatt(logoRid, docprId){
-  var w = GEO.hoch.width;
-  var c = [Math.round(w*0.34), w - Math.round(w*0.34)];
-  return P('', {before:0, after:0, line:1400, rPr:{sz:2}}) +
-    P('<w:r><w:rPr><w:noProof/></w:rPr>' + logoInline(logoRid, docprId, 1100000) + '</w:r>',
-      {jc:'center', before:0, after:0}) +
-    P('', {before:0, after:0, line:1400, rPr:{sz:2}}) +
-    P(R('Titel des Dokuments', {b:true, sz:56, color:C_GREEN}), {jc:'center', before:0, after:120}) +
-    P(R('Untertitel oder kurze Beschreibung', {sz:28, color:C_TEXT}), {jc:'center', before:0, after:0}) +
-    P('', {before:0, after:0, line:1800, rPr:{sz:2}}) +
-    TBL(c, [
-      [{xml: cellP('Erstellt von', {b:true})},  {xml: cellP('')}],
-      [{xml: cellP('Datum', {b:true})},         {xml: cellP(heuteLang())}],
-      [{xml: cellP('Version', {b:true})},       {xml: cellP('1.0')}],
-      [{xml: cellP('Freigabe', {b:true})},      {xml: cellP('')}],
-      [{xml: cellP('Gültig ab', {b:true})},{xml: cellP('')}]
-    ], {borders: gridBorders(), cellMar: false});
-}
-
-/* ── Brief ────────────────────────────────────────────────────────────────── */
-function bodyBrief(person, org, betreff){
-  var w = GEO.hoch.width;
-  var links  = Math.round(w * 0.58);
-  var rechts = w - links;
-
-  /* Absenderblock rechts, klein und grau */
-  var abs = '';
-  if(person.name)     abs += P(R(person.name, {b:true, sz:SZ_HDR}), {before:0, after:0, rPr:{sz:SZ_HDR}});
-  if(person.funktion) abs += P(R(person.funktion, {sz:SZ_HDR}), {before:0, after:0, rPr:{sz:SZ_HDR}});
-  abs += P('', {before:0, after:0, rPr:{sz:SZ_HDR}});
-  if(person.telefon)  abs += P(R('T ' + person.telefon, {sz:SZ_HDR}), {before:0, after:0, rPr:{sz:SZ_HDR}});
-  if(person.email)    abs += P(R(person.email, {sz:SZ_HDR}), {before:0, after:0, rPr:{sz:SZ_HDR}});
-  if(!person.telefon && !person.email){
-    abs += P(R('T ' + org.tel, {sz:SZ_HDR}), {before:0, after:0, rPr:{sz:SZ_HDR}});
-    abs += P(R(org.mail, {sz:SZ_HDR}), {before:0, after:0, rPr:{sz:SZ_HDR}});
-  }
-
-  /* Empfängeradresse links – Position passt ins Fenster eines C5/C6-Couverts */
-  var empf =
-    P(R('Anrede')) + P(R('Vorname Name')) + P(R('Strasse Nr.')) + P('') + P(R('PLZ Ort'));
-
-  return P('', {before:0, after:0, line:900, rPr:{sz:2}}) +
-    TBL([links, rechts], [[{xml: empf}, {xml: abs}]], {}) +
-    P('', {before:0, after:0, line:700, rPr:{sz:2}}) +
-    P(R(org.ort + ', ' + heuteLang())) +
-    P('') +
-    P(R(betreff || 'Betreff des Briefes', {b:true})) +
-    P('') +
-    P(R('Sehr geehrte Damen und Herren')) +
-    P('') +
-    P(R('Hier steht der Text des Briefes. Ersetzen Sie diesen Absatz durch Ihr ' +
-        'Anliegen. Halten Sie sich kurz und schreiben Sie in ganzen Sätzen.')) +
-    P('') +
-    P(R('Freundliche Grüsse')) +
-    P(R(org.name)) +
-    P('') + P('') + P('') +
-    P(R(person.name || 'Vorname Name')) +
-    P(R(person.funktion || 'Funktion')) +
-    P('') +
-    P(R('Beilagen', {b:true})) +
-    P(R('Beilage 1'), {style:'Aufzhlung'});
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   Inhalts-Paket
-   ═══════════════════════════════════════════════════════════════════════════ */
-function mkContentPkg(selected, isQuer){
-  var n = _applyN;
-  var pgBrk = P('<w:r><w:br w:type="page"/></w:r>');
-  var blocks = [], imgRels = [], imgBin = '';
-  var hasTitel = selected.indexOf('titel') >= 0;
-  var titelRid = 'rIdTitel' + n, titelFn = 'titelblatt_' + n + '.png';
-
-  if(hasTitel){
-    blocks.push(bodyTitelblatt(titelRid, (n % 500) + 20));
-    imgRels.push({id: titelRid, target: titelFn});
-    imgBin += PKG_IMG(titelFn, 'image/png', LOGO_PNG_B64);
-  }
-  if(selected.indexOf('ivz') >= 0)    blocks.push(bodyInhaltsverzeichnis());
-  if(selected.indexOf('muster') >= 0) blocks.push(bodyMusterinhalt(isQuer));
-  if(!blocks.length) return null;
-
-  /* Jeder Block beginnt auf einer neuen Seite. Steht das Titelblatt allein,
-     kommt hinten ein Umbruch dazu, damit es eine eigene Seite bleibt. */
-  var xml = blocks.join(pgBrk);
-  if(hasTitel && blocks.length === 1) xml += pgBrk;
-
-  return PKG_OPEN() + PKG_ROOT_RELS() +
-    PKG_RELS(imgRels, true) + imgBin +
-    PKG_STYLES() + PKG_NUMBERING() +
-    PKG_DOCUMENT(fixDocPrIds(xml)) + PKG_CLOSE();
-}
-
-function mkBriefPkg(person, org, betreff){
-  return PKG_OPEN() + PKG_ROOT_RELS() + PKG_RELS([], true) +
-    PKG_STYLES() + PKG_NUMBERING() +
-    PKG_DOCUMENT(fixDocPrIds(bodyBrief(person, org, betreff))) + PKG_CLOSE();
-}
-
-/* docPr-IDs müssen im Dokument eindeutig sein, sonst meckert Word beim
-   mehrfachen Anwenden. */
-function fixDocPrIds(xml){
-  var c = 1;
-  return xml.replace(/(<wp:docPr[^>]*\bid=")[^"]+"/g, function(m, pre){
-    return pre + ((_applyN * 1000) + (c++)) + '"';
-  });
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -1090,22 +769,9 @@ function apply(){
   var kopf2    = val('kopf2');
   var kuerzel  = val('kuerzel');
   var neueVersion = document.getElementById('neue-version').checked;
-  var person = {
-    name:     val('brief-name'),
-    funktion: val('brief-funktion'),
-    telefon:  val('brief-telefon'),
-    email:    val('brief-email')
-  };
-  var betreff = val('brief-betreff');
 
   var hdrPkg = isBrief ? mkBriefHdrPkg()
                        : mkHdrPkg(isQuer, isIntern, kopf1, kopf2);
-
-  var selected = !isBrief
-    ? ['titel','ivz','muster'].filter(function(k){ return inhaltSet[k]; })
-    : [];
-  var contentPkg = selected.length ? mkContentPkg(selected, isQuer) : null;
-  var briefPkg = (isBrief && inhaltSet['muster']) ? mkBriefPkg(person, org, betreff) : null;
 
   refreshDocName(function(){
     Word.run(function(ctx){
@@ -1133,8 +799,6 @@ function apply(){
           /* Vorhandener Text bleibt erhalten: der Body wird mit sich selbst
              ersetzt (nur Format/Ränder ändern), neue Inhalte kommen davor. */
           ctx.document.body.insertOoxml(setPageGeometry(bodyOoxml.value, isQuer, isBrief), 'Replace');
-          if(contentPkg) ctx.document.body.insertOoxml(contentPkg, Word.InsertLocation.start);
-          if(briefPkg)   ctx.document.body.insertOoxml(briefPkg,   Word.InsertLocation.start);
           return ctx.sync();
         });
       }).then(function(){
@@ -1145,22 +809,13 @@ function apply(){
         try{
           var state = JSON.stringify({
             typ:typ, fmt:fmt, kopf1:kopf1, kopf2:kopf2, kuerzel:kuerzel,
-            briefName:person.name, briefFunktion:person.funktion,
-            briefTelefon:person.telefon, briefEmail:person.email
           });
           Office.context.document.settings.set('lindeAddinState', state);
           Office.context.document.settings.saveAsync(function(){});
         }catch(e){}
-        try{
-          if(person.name || person.funktion || person.telefon || person.email){
-            localStorage.setItem('lindeBriefPersonal', JSON.stringify(person));
-            showProfileSaved();
-          }
-        }catch(e){}
         var lbl = {brief:'Brief', intern:'Int. Dok.', extern:'Ext. Dok.'};
         var fmtLbl = isBrief ? '' : (isQuer ? ' A4 Quer' : ' A4 Hoch');
-        var inhLbl = selected.length ? ' · ' + selected.join('+') : '';
-        showStatus('✓ ' + lbl[typ] + fmtLbl + inhLbl, 'ok');
+        showStatus('✓ ' + lbl[typ] + fmtLbl, 'ok');
         btn.disabled = false;
         btn.textContent = 'Auf Dokument anwenden';
       });
@@ -1170,30 +825,6 @@ function apply(){
       btn.textContent = 'Auf Dokument anwenden';
     });
   });
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   Profil
-   ═══════════════════════════════════════════════════════════════════════════ */
-function showProfileSaved(){
-  var badge = document.getElementById('profile-badge');
-  var reset = document.getElementById('profile-reset');
-  var hint  = document.getElementById('profile-hint');
-  if(badge) badge.classList.remove('hidden');
-  if(reset) reset.classList.remove('hidden');
-  if(hint)  hint.classList.add('hidden');
-}
-function clearBriefProfile(){
-  try{ localStorage.removeItem('lindeBriefPersonal'); }catch(e){}
-  ['brief-name','brief-funktion','brief-telefon','brief-email'].forEach(function(id){
-    var el = document.getElementById(id); if(el) el.value = '';
-  });
-  var badge = document.getElementById('profile-badge');
-  var reset = document.getElementById('profile-reset');
-  var hint  = document.getElementById('profile-hint');
-  if(badge) badge.classList.add('hidden');
-  if(reset) reset.classList.add('hidden');
-  if(hint)  hint.classList.remove('hidden');
 }
 
 /* Formatvorlagen-Galerie aufräumen: alles, was nicht zur Vorlage gehört, wird
@@ -1285,97 +916,6 @@ function updateTOC(){
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   Active Directory (Entra ID / Microsoft Graph) – Profil automatisch füllen
-   Bevor das genutzt werden kann, muss im Microsoft-Entra-Portal der Linde eine
-   App-Registrierung angelegt und die Client-ID unten eingetragen werden
-   (Umleitungs-URI: die taskpane.html-Adresse, Berechtigung: User.Read).
-   Ohne Registrierung schlägt der Aufruf still fehl – das Profil wird dann von
-   Hand erfasst und gemerkt. Das Add-In funktioniert in jedem Fall.
-   ═══════════════════════════════════════════════════════════════════════════ */
-var AAD_CLIENT_ID = '';    /* <- hier die Client-ID der App-Registrierung eintragen */
-var AAD_AUTHORITY = 'https://login.microsoftonline.com/organizations';
-var AAD_REDIRECT  = 'https://nicolatrava.github.io/BZ-Linde-Add-In/taskpane.html';
-var _msalPromise = null;
-
-function getMsalAsync(){
-  if(_msalPromise) return _msalPromise;
-  if(typeof msal === 'undefined' || !AAD_CLIENT_ID){
-    _msalPromise = Promise.resolve(null);
-    return _msalPromise;
-  }
-  try{
-    var pca = new msal.PublicClientApplication({
-      auth:  { clientId: AAD_CLIENT_ID, authority: AAD_AUTHORITY, redirectUri: AAD_REDIRECT },
-      cache: { cacheLocation: 'localStorage' }
-    });
-    var init = (typeof pca.initialize === 'function') ? pca.initialize() : Promise.resolve();
-    _msalPromise = init.then(function(){
-      var hr = (typeof pca.handleRedirectPromise === 'function') ? pca.handleRedirectPromise() : Promise.resolve();
-      return hr.catch(function(){}).then(function(){ return pca; });
-    }).catch(function(){ return null; });
-  }catch(e){ _msalPromise = Promise.resolve(null); }
-  return _msalPromise;
-}
-
-function adAcquireToken(pca, interactive){
-  var req = { scopes: ['User.Read'] };
-  var accts = pca.getAllAccounts();
-  if(accts && accts.length){
-    return pca.acquireTokenSilent({ scopes: ['User.Read'], account: accts[0] })
-      .catch(function(e){ if(interactive) return pca.acquireTokenPopup(req); throw e; });
-  }
-  if(interactive) return pca.loginPopup(req);
-  return pca.ssoSilent(req);
-}
-
-function fillBriefFromAD(me){
-  if(!me) return;
-  var name = me.displayName || [me.givenName, me.surname].filter(Boolean).join(' ');
-  var tel  = me.mobilePhone || (me.businessPhones && me.businessPhones[0]) || '';
-  var mail = me.mail || me.userPrincipalName || '';
-  function set(id, v){ var el = document.getElementById(id); if(el && v) el.value = v; }
-  set('brief-name', name);
-  set('brief-funktion', me.jobTitle || '');
-  set('brief-telefon', tel);
-  set('brief-email', mail);
-  try{
-    localStorage.setItem('lindeBriefPersonal', JSON.stringify({
-      name:name, funktion:me.jobTitle || '', telefon:tel, email:mail
-    }));
-  }catch(e){}
-  showProfileSaved();
-}
-
-function loadFromActiveDirectory(interactive){
-  /* Ältere Word-Versionen ohne Promise-Unterstützung: still aussteigen. */
-  if(typeof Promise === 'undefined') return;
-  var btn = document.getElementById('ad-load');
-  if(btn && interactive){ btn.disabled = true; btn.textContent = 'Lädt…'; }
-  return getMsalAsync().then(function(pca){
-    if(!pca) throw new Error(AAD_CLIENT_ID ? 'MSAL nicht verfügbar' : 'Keine App-Registrierung hinterlegt');
-    return adAcquireToken(pca, interactive);
-  }).then(function(res){
-    return fetch('https://graph.microsoft.com/v1.0/me?$select=displayName,givenName,surname,jobTitle,mobilePhone,businessPhones,mail,userPrincipalName', {
-      headers: { Authorization: 'Bearer ' + res.accessToken }
-    });
-  }).then(function(r){ return r.json(); }).then(function(me){
-    fillBriefFromAD(me);
-    if(btn){ btn.disabled = false; btn.textContent = 'Aus Active Directory laden'; }
-    return true;
-  }).catch(function(e){
-    if(btn){ btn.disabled = false; btn.textContent = 'Aus Active Directory laden'; }
-    if(interactive){
-      var hint = document.getElementById('profile-hint');
-      if(hint){
-        hint.classList.remove('hidden');
-        hint.textContent = 'AD nicht verfügbar (' + ((e && (e.errorCode || e.message)) || e) + ') – bitte von Hand erfassen.';
-      }
-    }
-    return false;
-  });
-}
-
-/* ═══════════════════════════════════════════════════════════════════════════
    Start
    ═══════════════════════════════════════════════════════════════════════════ */
 Office.onReady(function(info){
@@ -1384,7 +924,6 @@ Office.onReady(function(info){
     return;
   }
   refreshDocName();
-  inhaltSet = {};
   setFmt('hoch');
   setTyp('intern');
 
@@ -1407,21 +946,6 @@ Office.onReady(function(info){
   }catch(e){}
   fillOrgFields(org);
 
-  /* Persönliche Brief-Angaben dieses Nutzers vorbelegen. */
-  try{
-    var personal = localStorage.getItem('lindeBriefPersonal');
-    if(personal){
-      personal = JSON.parse(personal);
-      if(personal.name)     document.getElementById('brief-name').value     = personal.name;
-      if(personal.funktion) document.getElementById('brief-funktion').value = personal.funktion;
-      if(personal.telefon)  document.getElementById('brief-telefon').value  = personal.telefon;
-      if(personal.email)    document.getElementById('brief-email').value    = personal.email;
-      showProfileSaved();
-    }
-  }catch(e){}
-
-  /* Stiller Versuch, das Profil aus dem Verzeichnis zu holen. */
-  try{ loadFromActiveDirectory(false); }catch(e){}
 
   /* Zuletzt verwendete Einstellungen dieses Dokuments wiederherstellen. */
   try{
@@ -1434,10 +958,6 @@ Office.onReady(function(info){
       if(st.kopf1   !== undefined) document.getElementById('kopf1').value   = st.kopf1;
       if(st.kopf2   !== undefined) document.getElementById('kopf2').value   = st.kopf2;
       if(st.kuerzel !== undefined) document.getElementById('kuerzel').value = st.kuerzel;
-      if(st.briefName)     document.getElementById('brief-name').value     = st.briefName;
-      if(st.briefFunktion) document.getElementById('brief-funktion').value = st.briefFunktion;
-      if(st.briefTelefon)  document.getElementById('brief-telefon').value  = st.briefTelefon;
-      if(st.briefEmail)    document.getElementById('brief-email').value    = st.briefEmail;
     });
   }catch(e){}
 });

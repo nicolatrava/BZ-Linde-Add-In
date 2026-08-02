@@ -1,13 +1,15 @@
 # Linde Dokumentenvorlagen – Word-Add-In
 
 Word-Add-In für das Betagtenzentrum Linde Grosswangen. Es setzt Kopfzeile,
-Fusszeile, Seitenformat und – auf Wunsch – Musterinhalt, Inhaltsverzeichnis,
-Titelblatt oder eine Briefvorlage in ein bestehendes Word-Dokument.
+Fusszeile und Seitenformat eines bestehenden Word-Dokuments auf die Gestaltung
+aus `Muster_Dokument_A4_hoch.docx` (in diesem Repository abgelegt).
 
-Aufbau und Bedienung entsprechen dem BWH-Add-In
-([nicolatrava/bwh-addin](https://github.com/nicolatrava/bwh-addin)); die
-Gestaltung stammt aus `Muster_Dokument_A4_hoch.docx` (in diesem Repository
-abgelegt).
+Aufbau und Bedienung folgen dem BWH-Add-In
+([nicolatrava/bwh-addin](https://github.com/nicolatrava/bwh-addin)). Bewusst
+**nicht** übernommen sind dessen Musterinhalt, Inhaltsverzeichnis und
+Titelblatt: dafür gibt es bei der Linde keine eigene Vorlage, und erfundener
+Inhalt wäre schlechter als gar keiner. Sobald ein echtes Musterdokument
+vorliegt, lässt es sich als weiterer Baustein ergänzen.
 
 ## Was das Add-In macht
 
@@ -15,14 +17,14 @@ abgelegt).
 |---|---|
 | 1 Dokumenttyp | Internes Dokument · Externes Dokument · Brief |
 | 2 Format | A4 Hoch · A4 Quer (beim Brief immer A4 Hoch) |
-| 3 Inhalt | Musterinhalt · Inhaltsverzeichnis · Titelblatt (nur A4 Hoch) |
-| 4 Kopfzeile | die beiden Zeilen rechts oben, Kürzel, neue Version; beim Brief das persönliche Profil |
-| 5 Aktualisieren | Fusszeile neu schreiben · Felder und Inhaltsverzeichnis aktualisieren |
+| 3 Kopfzeile | die beiden Zeilen rechts oben, Kürzel, neue Version |
+| 4 Aktualisieren | Fusszeile neu schreiben · Felder und Inhaltsverzeichnis aktualisieren |
 
 **Kopfzeile** – zweispaltige Tabelle mit Trennlinie unten, links das
 schwebende Logo, rechts zwei frei erfassbare Zeilen: die erste fett, die
 zweite normal – genau wie in der Muster-Vorlage («Sekretariat / C 3.4.2
-Kreditoren» über «Ordner Kreditoren»). Externe Dokumente bekommen nur Logo
+Kreditoren» über «Ordner Kreditoren»). Bleiben die Felder leer, stehen dort
+«Prozessname» und «Ablageort» als Platzhalter. Externe Dokumente bekommen nur Logo
 und Linie, ohne interne Metadaten.
 
 Der Anker des Logos ist bewusst 1:1 aus der Vorlage übernommen (waagrecht am
@@ -38,8 +40,10 @@ Wingdings-Rauten als Trennzeichen, rechts «Seite X von Y» und darunter
 rechts 2,0 cm, unten 2,3 cm, Kopfzeile 1,2 cm, Fusszeile 0,9 cm) bzw. dieselben
 Ränder im Querformat.
 
-Vorhandener Text bleibt immer erhalten: Kopf- und Fusszeile werden ersetzt,
-neue Inhalte kommen davor. Gespeichert wird nichts automatisch.
+Der Text des Dokuments wird nie angefasst – nur Kopfzeile, Fusszeile und
+Seitenformat. Gespeichert wird nichts automatisch. Kopf- und Fusszeile setzen
+Arial ausdrücklich, sonst erben sie die Schrift des Dokuments (in einem
+frischen Word-Dokument wäre das Aptos).
 
 ## Installation
 
@@ -66,35 +70,17 @@ Die häufigsten Anpassungen stehen alle zuoberst in
 * `ORG_DEFAULT` – Adresse für die Fusszeile. Sie lässt sich zusätzlich im
   Taskpane unter *Adresse der Fusszeile* ändern; die Änderung merkt sich der
   jeweilige Rechner.
-* `AAD_CLIENT_ID` – siehe *Active Directory* unten.
 
 Nach jeder Änderung neu bauen und die Build-Nummer erhöhen:
 
 ```bash
-echo 2 > BUILD          # Build-Nummer hochzählen
+echo 5 > BUILD          # Build-Nummer hochzählen
 python3 build.py        # erzeugt taskpane.html
 node tools/test.js      # Bedienlogik und OOXML prüfen
 ```
 
 Ausserdem in `manifest.xml` die `?v=`-Nummer der drei URLs und die `<Version>`
 erhöhen, damit Word die neue Fassung lädt und nicht die zwischengespeicherte.
-
-### Active Directory (optional)
-
-Beim Brief kann das Profil (Name, Funktion, Telefon, E-Mail) aus dem
-Verzeichnis geladen werden. Dafür braucht es eine App-Registrierung im
-Microsoft-Entra-Portal der Linde:
-
-1. Neue App-Registrierung, Kontotyp «nur eigenes Verzeichnis».
-2. Plattform *Single-Page-Anwendung*, Umleitungs-URI
-   `https://nicolatrava.github.io/BZ-Linde-Add-In/taskpane.html`.
-3. API-Berechtigung *Microsoft Graph → User.Read* (delegiert).
-4. Die Anwendungs-(Client-)ID in `src/taskpane.template.html` bei
-   `AAD_CLIENT_ID` eintragen und neu bauen.
-
-Ohne Registrierung bleibt die Schaltfläche wirkungslos; das Profil wird von
-Hand erfasst und danach auf dem Rechner gemerkt. Alles andere funktioniert
-unabhängig davon.
 
 ## Entwicklung
 
@@ -105,11 +91,7 @@ src/taskpane.template.html      Quelle: Bedienoberfläche und OOXML-Erzeugung
 build.py                        baut taskpane.html aus src/ und assets/
 BUILD                           Build-Nummer, erscheint unten im Taskpane
 assets/logo-dok.png             Logo, freigestellt aus der Muster-Vorlage
-assets/styles.xml               styles.xml der Muster-Vorlage
-assets/styles-extra.xml         Zusatz-Stile (Verzeichnis 2/3, Hyperlink)
-assets/numbering.xml            numbering.xml der Muster-Vorlage
 icon16/32/80.png                Symbole für das Menüband
-msal-browser.min.js             MSAL für die Anmeldung am Verzeichnis
 tools/test.js                   Schnelltest ohne Word
 tools/preview.js                erzeugt Beispiel-Dokumente als .docx
 Muster_Dokument_A4_hoch.docx    Ausgangsvorlage

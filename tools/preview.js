@@ -165,8 +165,6 @@ const DECL = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
 function makeDocx(api, { hdrPkg, ftrPkg, contentPkg, sectPr }) {
   const media = [];
   const rels = [
-    '<Relationship Id="rIdStyles" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>',
-    '<Relationship Id="rIdNumbering" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering" Target="numbering.xml"/>',
     '<Relationship Id="rIdHdr" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/header" Target="header1.xml"/>',
     '<Relationship Id="rIdFtr" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="footer1.xml"/>'
   ];
@@ -201,8 +199,6 @@ function makeDocx(api, { hdrPkg, ftrPkg, contentPkg, sectPr }) {
       '<Default Extension="xml" ContentType="application/xml"/>' +
       '<Default Extension="png" ContentType="image/png"/>' +
       '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
-      '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>' +
-      '<Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/>' +
       '<Override PartName="/word/header1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml"/>' +
       '<Override PartName="/word/footer1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/>' +
       '</Types>' },
@@ -215,9 +211,7 @@ function makeDocx(api, { hdrPkg, ftrPkg, contentPkg, sectPr }) {
     { name: 'word/header1.xml', data: DECL + '<w:hdr ' + NS + '>' + bodyOf(hdrPkg) + '</w:hdr>' },
     { name: 'word/_rels/header1.xml.rels', data: relXml(hdrRels) },
     { name: 'word/footer1.xml', data: DECL + '<w:ftr ' + NS + '>' + bodyOf(ftrPkg) + '</w:ftr>' },
-    { name: 'word/_rels/footer1.xml.rels', data: relXml(ftrRels) },
-    { name: 'word/styles.xml', data: DECL + api.STYLES_XML },
-    { name: 'word/numbering.xml', data: DECL + api.NUMBERING_XML }
+    { name: 'word/_rels/footer1.xml.rels', data: relXml(ftrRels) }
   ];
   const seen = {};
   for (const img of media) {
@@ -317,16 +311,14 @@ function main() {
     file: 'A4-Hoch_intern.docx',
     hdrPkg: api.mkHdrPkg(false, true, 'Sekretariat / C 3.4.2 Kreditoren', 'Ordner Kreditoren'),
     ftrPkg: api.mkFtrPkg(false, org, '31.07.26', 'NT', true),
-    contentPkg: api.mkContentPkg(['muster'], false),
     sectPr: api.GEO.hoch.pgSz + api.PGMAR
   });
 
   api._applyN = 2;
   cases.push({
-    file: 'A4-Hoch_intern_Titelblatt_IVZ_Muster.docx',
+    file: 'A4-Hoch_intern_zweite-Variante.docx',
     hdrPkg: api.mkHdrPkg(false, true, 'Pflege und Betreuung / B 2.1 Eintritt', 'Q-Handbuch, Kapitel B'),
     ftrPkg: api.mkFtrPkg(false, org, '31.07.26', 'JM', true),
-    contentPkg: api.mkContentPkg(['titel', 'ivz', 'muster'], false),
     sectPr: api.GEO.hoch.pgSz + api.PGMAR
   });
 
@@ -335,7 +327,6 @@ function main() {
     file: 'A4-Quer_intern.docx',
     hdrPkg: api.mkHdrPkg(true, true, 'Hotellerie / D 1.2 Menüplanung', 'Ordner Hotellerie'),
     ftrPkg: api.mkFtrPkg(true, org, '', '', true),
-    contentPkg: api.mkContentPkg(['muster'], true),
     sectPr: api.GEO.quer.pgSz + api.PGMAR
   });
 
@@ -344,7 +335,6 @@ function main() {
     file: 'A4-Hoch_extern.docx',
     hdrPkg: api.mkHdrPkg(false, false, '', ''),
     ftrPkg: api.mkFtrPkg(false, org, '', '', true),
-    contentPkg: api.mkContentPkg(['muster'], false),
     sectPr: api.GEO.hoch.pgSz + api.PGMAR
   });
 
@@ -355,7 +345,6 @@ function main() {
     file: 'Brief.docx',
     hdrPkg: api.mkBriefHdrPkg(),
     ftrPkg: api.mkFtrPkg(false, org, '', '', false),
-    contentPkg: api.mkBriefPkg(person, org, 'Ihre Anfrage vom 12. Juni'),
     sectPr: api.GEO.hoch.pgSz + api.PGMAR_BRIEF
   });
 
@@ -363,7 +352,6 @@ function main() {
   for (const c of cases) {
     checkOrder(bodyOf(c.hdrPkg), c.file + ' Kopfzeile', problems);
     checkOrder(bodyOf(c.ftrPkg), c.file + ' Fusszeile', problems);
-    if (c.contentPkg) checkOrder(bodyOf(c.contentPkg), c.file + ' Inhalt', problems);
     const buf = makeDocx(api, c);
     fs.writeFileSync(path.join(OUTDIR, c.file), buf);
     console.log(c.file.padEnd(44) + (buf.length / 1024).toFixed(0) + ' KB');
