@@ -61,7 +61,6 @@ function t(name, got, exp) {
 }
 
 const S = sandbox;
-S.buildCards();
 
 /* ── Bedienlogik ──────────────────────────────────────────────────────────── */
 S.setFmt('hoch'); S.setTyp('intern');

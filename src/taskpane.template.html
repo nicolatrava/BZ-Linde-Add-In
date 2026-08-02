@@ -40,17 +40,6 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:white;font-size:13px
 .tbtn.on{background:var(--green);color:white}
 .tbtn+.tbtn{border-left:1.5px solid var(--green)}
 
-/* ── Bereich cards ── */
-.cards{display:flex;flex-direction:column;gap:5px}
-.card{border:1.5px solid var(--border);border-radius:8px;padding:9px 13px;
-  cursor:pointer;transition:all .15s;background:white;position:relative}
-.card:hover,.card.on{border-color:var(--green);background:var(--green-light)}
-.card.on{box-shadow:0 0 0 3px rgba(0,166,81,.12)}
-.card-name{font-weight:600;font-size:13px;padding-right:18px}
-.card-addr{font-size:11px;color:#888;margin-top:1px}
-.ck{position:absolute;right:11px;top:9px;color:var(--green);font-size:13px;opacity:0}
-.card.on .ck{opacity:1}
-
 /* ── form fields ── */
 .field{margin-bottom:9px}
 .field label{display:block;font-size:11px;font-weight:600;color:#999;
@@ -139,37 +128,20 @@ details.adr[open]>summary:before{content:'\25BE '}
   </div>
   <div class="sep" id="inh-sep"></div>
 
-  <!-- Step 4: Bereich -->
-  <div class="step" style="margin-top:14px">
-    <div class="step-title"><span class="sn">4</span>Bereich w&auml;hlen</div>
-    <div class="cards" id="cards"></div>
-    <div class="field hidden" id="bereich-frei-field" style="margin-top:7px">
-      <label>Bereich (eigener Text)</label>
-      <input type="text" id="bereich-frei" placeholder="z.B. Projektgruppe Neubau"/>
-    </div>
-  </div>
-  <div class="sep"></div>
-
-  <!-- Step 5: Metadaten -->
+  <!-- Step 4: Kopfzeile und Metadaten -->
   <div class="step" id="meta-step" style="margin-top:14px">
-    <div class="step-title"><span class="sn">5</span>Metadaten</div>
+    <div class="step-title"><span class="sn">4</span>Kopfzeile</div>
 
-    <!-- Kopfzeile: nur Interne Dokumente -->
+    <!-- Die zwei Zeilen rechts in der Kopfzeile – nur bei internen Dokumenten -->
     <div id="pname-fields">
-      <div class="row2">
-        <div class="field" style="flex:0 0 38%">
-          <label>Dokument-Nr.</label>
-          <input type="text" id="doknr" placeholder="z.B. C 3.4.2"/>
-        </div>
-        <div class="field">
-          <label>Prozessname</label>
-          <input type="text" id="prozessname" placeholder="z.B. Kreditoren"/>
-        </div>
+      <div class="field">
+        <label>Zeile 1 (fett)</label>
+        <input type="text" id="kopf1" placeholder="z.B. Sekretariat / C 3.4.2 Kreditoren"/>
       </div>
       <div class="field">
-        <label>Ablageort</label>
-        <input type="text" id="ablageort" placeholder="z.B. Ordner Kreditoren"/>
-        <div class="profile-hint">Zweite Zeile der Kopfzeile. Muss kein Pfad sein &ndash; sinnvoll beschreiben, wo das Dokument abgelegt ist.</div>
+        <label>Zeile 2</label>
+        <input type="text" id="kopf2" placeholder="z.B. Ordner Kreditoren"/>
+        <div class="profile-hint">Beide Zeilen erscheinen rechts oben, genau wie in der Muster-Vorlage. Externe Dokumente bekommen nur Logo und Trennlinie.</div>
       </div>
     </div>
 
@@ -260,7 +232,7 @@ details.adr[open]>summary:before{content:'\25BE '}
   <div class="sep"></div>
 
   <div class="step" style="margin-top:14px">
-    <div class="step-title"><span class="sn">6</span>Aktualisieren</div>
+    <div class="step-title"><span class="sn">5</span>Aktualisieren</div>
     <button type="button" class="ad-btn" onclick="updateFooterMeta()">Fusszeile aktualisieren (Name &amp; Datum)</button>
     <button type="button" class="ad-btn" onclick="updateTOC()">Inhaltsverzeichnis / Felder aktualisieren</button>
     <div class="profile-hint">Aktualisiert Adresse, Dokumentname und Datum in der Fusszeile bzw. alle Felder im Dokument &ndash; ohne sonst etwas zu ver&auml;ndern. Version und K&uuml;rzel bleiben stehen.</div>
@@ -308,63 +280,12 @@ var ORG_DEFAULT = {
 };
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   Bereiche – erste Zeile der Kopfzeile («Bereich / Nr. Prozessname»)
-   Zum Ergänzen oder Umbenennen einfach diese Liste anpassen.
-   ═══════════════════════════════════════════════════════════════════════════ */
-var BEREICHE = [
-  {name:'Allgemeine Vorlage', note:'ohne Bereichsangabe in der Kopfzeile'},
-  {name:'Zentrumsleitung'},
-  {name:'Sekretariat'},
-  {name:'Administration / Finanzen'},
-  {name:'Pflege und Betreuung'},
-  {name:'Aktivierung'},
-  {name:'Hotellerie'},
-  {name:'Küche'},
-  {name:'Hausdienst / Technik'},
-  {name:'Personal / Bildung'},
-  {name:'Qualitätsmanagement'},
-  {name:'Eigener Bereich', free:true, note:'Text unten frei erfassen'}
-];
-
-/* ═══════════════════════════════════════════════════════════════════════════
    UI-Zustand
    ═══════════════════════════════════════════════════════════════════════════ */
 var typ    = 'intern';   /* 'intern' | 'extern' | 'brief' */
 var fmt    = 'hoch';     /* 'hoch'   | 'quer' */
 var inhaltSet = {};      /* {muster:bool, ivz:bool, titel:bool} */
-var bereich = null;      /* {name, free} */
 var _applyN = 0;
-
-function buildCards(){
-  var host = document.getElementById('cards');
-  var html = '';
-  for(var i=0;i<BEREICHE.length;i++){
-    var b = BEREICHE[i];
-    var sub = b.note ? b.note : (ORG_DEFAULT.strasse + ' · ' + ORG_DEFAULT.plz + ' ' + ORG_DEFAULT.ort);
-    html += '<div class="card" data-i="'+i+'" onclick="selBereich(this)">' +
-              '<span class="ck">&#10003;</span>' +
-              '<div class="card-name">'+escHtml(b.name)+'</div>' +
-              '<div class="card-addr">'+escHtml(sub)+'</div>' +
-            '</div>';
-  }
-  host.innerHTML = html;
-}
-
-function selBereich(el){
-  var cards = document.querySelectorAll('.card');
-  for(var i=0;i<cards.length;i++){ cards[i].className='card'; }
-  el.className = 'card on';
-  bereich = BEREICHE[parseInt(el.getAttribute('data-i'),10)];
-  document.getElementById('bereich-frei-field').className = 'field' + (bereich.free ? '' : ' hidden');
-}
-
-/* Der Text, der tatsächlich in die Kopfzeile kommt. */
-function bereichText(){
-  if(!bereich) return '';
-  if(bereich.free) return document.getElementById('bereich-frei').value.trim();
-  if(bereich.name === 'Allgemeine Vorlage') return '';
-  return bereich.name;
-}
 
 function setTyp(v){
   typ = v;
@@ -434,10 +355,6 @@ function esc(s){
   return String(s == null ? '' : s)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
     .replace(/"/g,'&quot;').replace(/'/g,'&apos;');
-}
-function escHtml(s){
-  return String(s == null ? '' : s)
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 function val(id){
   var el = document.getElementById(id);
@@ -639,9 +556,10 @@ function PKG_NUMBERING(){
 }
 
 /* ── Bilder ───────────────────────────────────────────────────────────────── */
-/* Schwebendes Logo (Kopfzeile). posV wird vom Seitenrand aus gemessen, damit
-   das Logo unabhängig von der Zeilenhöhe der Kopfzeilen-Tabelle immer gleich
-   hoch sitzt – in Word Desktop wie in Word im Browser. */
+/* Schwebendes Logo der Kopfzeile – Anker exakt wie in der Muster-Vorlage:
+   waagrecht am linken Seitenrand, senkrecht vom Trägerabsatz aus nach oben.
+   Ein seitenbezogener Anker (relativeFrom="page") wird von Word im Browser
+   nicht zuverlässig umgesetzt – das Logo landet dann im Text. */
 function logoAnchor(rid, docprId, cy, posV){
   var cx = Math.round(cy * LOGO_RATIO);
   return '<w:drawing>' +
@@ -649,7 +567,7 @@ function logoAnchor(rid, docprId, cy, posV){
     'relativeHeight="251658240" behindDoc="1" locked="0" layoutInCell="1" allowOverlap="1">' +
     '<wp:simplePos x="0" y="0"/>' +
     '<wp:positionH relativeFrom="margin"><wp:align>left</wp:align></wp:positionH>' +
-    '<wp:positionV relativeFrom="page"><wp:posOffset>'+posV+'</wp:posOffset></wp:positionV>' +
+    '<wp:positionV relativeFrom="paragraph"><wp:posOffset>'+posV+'</wp:posOffset></wp:positionV>' +
     '<wp:extent cx="'+cx+'" cy="'+cy+'"/>' +
     '<wp:effectExtent l="0" t="0" r="0" b="0"/>' +
     '<wp:wrapNone/>' +
@@ -706,13 +624,14 @@ var PGMAR = '<w:pgMar w:top="1701" w:right="1134" w:bottom="1304" w:left="1134" 
 var PGMAR_BRIEF = '<w:pgMar w:top="1701" w:right="1134" w:bottom="1304" w:left="1134" ' +
                   'w:header="680" w:footer="510" w:gutter="0"/>';
 
-/* Logo in der Kopfzeile: Höhe 1.755 cm, Oberkante 0.40 cm unter der
-   Papierkante – die Masse der Original-Kopfzeile. */
+/* Logo in der Kopfzeile: Höhe und Versatz wie in der Muster-Vorlage
+   (1.755 cm hoch, 1.62 cm oberhalb des Trägerabsatzes nach der Tabelle). */
 var LOGO_CY_HDR   = 631825;
-var LOGO_POSV_HDR = 144000;
-/* Brief: dasselbe Logo etwas grösser als Briefkopf. */
-var LOGO_CY_BRIEF   = 900000;
-var LOGO_POSV_BRIEF = 144000;
+var LOGO_POSV_HDR = -584200;
+/* Brief: kein Tabellenkopf davor, darum weniger Versatz – der Trägerabsatz
+   ist hier die erste Zeile der Kopfzeile. */
+var LOGO_CY_BRIEF   = 750000;
+var LOGO_POSV_BRIEF = -216000;
 
 /* ═══════════════════════════════════════════════════════════════════════════
    Kopfzeile
@@ -727,23 +646,21 @@ function hdrBody(isQuer, showMeta, kopfZeile1, kopfZeile2, logoRid, docprId){
     '<w:insideH w:val="none" w:sz="0" w:space="0" w:color="auto"/>' +
     '<w:insideV w:val="none" w:sz="0" w:space="0" w:color="auto"/>';
 
-  var row1 = showMeta
-    ? P(R(kopfZeile1, {b:true, color:C_TEXT, sz:SZ_HDR}),
-        {jc:'right', before:0, after:0, rPr:{b:true, color:C_TEXT, sz:SZ_HDR}})
-    : P('', {jc:'right', before:0, after:0, rPr:{b:true, color:C_TEXT, sz:SZ_HDR}});
-  var row2 = showMeta
-    ? P(R(kopfZeile2, {color:C_TEXT, sz:SZ_HDR}),
-        {jc:'right', before:0, after:0, rPr:{color:C_TEXT, sz:SZ_HDR}})
-    : P('', {jc:'right', before:0, after:0, rPr:{color:C_TEXT, sz:SZ_HDR}});
+  var row1 = P(showMeta ? R(kopfZeile1, {b:true, color:C_TEXT, sz:SZ_HDR}) : '',
+        {jc:'right', before:0, after:0, rPr:{b:true, color:C_TEXT, sz:SZ_HDR}});
+  var row2 = P(showMeta ? R(kopfZeile2, {color:C_TEXT, sz:SZ_HDR}) : '',
+        {jc:'right', before:0, after:0, rPr:{color:C_TEXT, sz:SZ_HDR}});
 
-  /* Feste Zeilenhöhe (je 0.5 cm): so ist die Höhe der Kopfzeile immer gleich,
-     egal ob die rechte Spalte gefüllt ist oder nicht. */
+  /* Die linke Spalte bleibt leer und hält den Platz für das Logo frei. Ihre
+     Absatzmarke ist – wie in der Vorlage – 20 pt gross; daraus ergibt sich die
+     Höhe der Kopfzeilen-Tabelle und damit die Lage des Logos darüber. */
+  var leer = P('', {before:0, after:0, rPr:{b:true, color:C_TEXT, sz:40}});
   var tbl = TBL(g.hdr, [
-    [ {vMerge:'restart', xml:P('', {before:0, after:0})}, {xml:row1} ],
-    [ {vMerge:'cont',    xml:P('', {before:0, after:0})}, {xml:row2} ]
-  ], {borders: bottomLine, rowHeight: 284});
+    [ {vMerge:'restart', xml:leer}, {xml:row1} ],
+    [ {vMerge:'cont',    xml:leer}, {xml:row2} ]
+  ], {borders: bottomLine});
 
-  /* Träger-Absatz für das schwebende Logo – wie im Original 0.2 pt hoch. */
+  /* Träger-Absatz für das schwebende Logo – wie in der Vorlage 0.2 pt hoch. */
   var logoPara = P(
     '<w:r><w:rPr><w:noProof/></w:rPr>' + logoAnchor(logoRid, docprId, LOGO_CY_HDR, LOGO_POSV_HDR) + '</w:r>',
     {before:0, after:0, rPr:{sz:4}});
@@ -763,7 +680,7 @@ function mkHdrPkg(isQuer, showMeta, z1, z2){
 }
 
 /* Brief-Kopfzeile: nur das Logo, keine Linie, kein Raster. */
-function mkBriefHdrPkg(bereichLabel){
+function mkBriefHdrPkg(){
   var n = _applyN;
   var rid = 'rIdLogo' + n;
   var fn  = 'logo_brief_' + n + '.png';
@@ -771,10 +688,7 @@ function mkBriefHdrPkg(bereichLabel){
     P('<w:r><w:rPr><w:noProof/></w:rPr>' +
       logoAnchor(rid, (n % 500) + 1, LOGO_CY_BRIEF, LOGO_POSV_BRIEF) + '</w:r>',
       {before:0, after:0, rPr:{sz:4}}) +
-    (bereichLabel
-      ? P(R(bereichLabel, {color:C_TEXT, sz:SZ_HDR}),
-          {jc:'right', before:0, after:0, rPr:{color:C_TEXT, sz:SZ_HDR}})
-      : P('', {before:0, after:0, rPr:{sz:4}}));
+    P('', {before:0, after:0, rPr:{sz:4}});
   return PKG_OPEN() + PKG_ROOT_RELS() +
     PKG_RELS([{id:rid, target:fn}], false) +
     PKG_IMG(fn, 'image/png', LOGO_PNG_B64) +
@@ -1158,9 +1072,6 @@ function setPageGeometry(pkgXml, isQuer, isBrief){
 }
 
 function apply(){
-  if(!bereich){ showStatus('Bitte Bereich wählen', 'err'); return; }
-  if(bereich.free && !bereichText()){ showStatus('Bitte den eigenen Bereich erfassen', 'err'); return; }
-
   var btn = document.getElementById('applyBtn');
   btn.disabled = true;
   btn.textContent = 'Wird angewendet…';
@@ -1172,9 +1083,8 @@ function apply(){
   var isBrief  = (typ === 'brief');
   var isIntern = (typ === 'intern');
   var org      = readOrg();
-  var doknr    = val('doknr');
-  var pname    = val('prozessname');
-  var aort     = val('ablageort');
+  var kopf1    = val('kopf1');
+  var kopf2    = val('kopf2');
   var kuerzel  = val('kuerzel');
   var neueVersion = document.getElementById('neue-version').checked;
   var person = {
@@ -1185,14 +1095,8 @@ function apply(){
   };
   var betreff = val('brief-betreff');
 
-  /* Kopfzeile Zeile 1: «Bereich / Nr. Prozessname» – wie in der Muster-Vorlage
-     («Sekretariat / C 3.4.2 Kreditoren»). Leere Teile fallen weg. */
-  var rechts = [doknr, pname].filter(Boolean).join(' ');
-  var z1 = [bereichText(), rechts].filter(Boolean).join(' / ');
-  var z2 = aort;
-
-  var hdrPkg = isBrief ? mkBriefHdrPkg(bereichText())
-                       : mkHdrPkg(isQuer, isIntern, z1, z2);
+  var hdrPkg = isBrief ? mkBriefHdrPkg()
+                       : mkHdrPkg(isQuer, isIntern, kopf1, kopf2);
 
   var selected = !isBrief
     ? ['titel','ivz','muster'].filter(function(k){ return inhaltSet[k]; })
@@ -1237,9 +1141,7 @@ function apply(){
         saveOrg(org);
         try{
           var state = JSON.stringify({
-            typ:typ, fmt:fmt, bereich:(bereich ? bereich.name : ''),
-            bereichFrei: val('bereich-frei'),
-            doknr:doknr, pname:pname, aort:aort, kuerzel:kuerzel,
+            typ:typ, fmt:fmt, kopf1:kopf1, kopf2:kopf2, kuerzel:kuerzel,
             briefName:person.name, briefFunktion:person.funktion,
             briefTelefon:person.telefon, briefEmail:person.email
           });
@@ -1255,7 +1157,7 @@ function apply(){
         var lbl = {brief:'Brief', intern:'Int. Dok.', extern:'Ext. Dok.'};
         var fmtLbl = isBrief ? '' : (isQuer ? ' A4 Quer' : ' A4 Hoch');
         var inhLbl = selected.length ? ' · ' + selected.join('+') : '';
-        showStatus('✓ ' + (bereichText() || 'Allgemein') + ' | ' + lbl[typ] + fmtLbl + inhLbl, 'ok');
+        showStatus('✓ ' + lbl[typ] + fmtLbl + inhLbl, 'ok');
         btn.disabled = false;
         btn.textContent = 'Auf Dokument anwenden';
       });
@@ -1478,7 +1380,6 @@ Office.onReady(function(info){
     document.body.innerHTML = '<div style="padding:24px;color:#c62828">Nur in Microsoft Word verfügbar.</div>';
     return;
   }
-  buildCards();
   refreshDocName();
   inhaltSet = {};
   setFmt('hoch');
@@ -1525,19 +1426,11 @@ Office.onReady(function(info){
       var st = Office.context.document.settings.get('lindeAddinState');
       if(st){ try{ st = JSON.parse(st); }catch(e){ st = null; } }
       if(!st) return;
-      if(st.typ) setTyp(st.typ);
       if(st.fmt) setFmt(st.fmt);
-      if(st.bereich){
-        var cards = document.querySelectorAll('.card');
-        for(var i=0;i<cards.length;i++){
-          if(BEREICHE[i] && BEREICHE[i].name === st.bereich){ selBereich(cards[i]); break; }
-        }
-      }
-      if(st.bereichFrei)  document.getElementById('bereich-frei').value  = st.bereichFrei;
-      if(st.doknr    !== undefined) document.getElementById('doknr').value       = st.doknr;
-      if(st.pname    !== undefined) document.getElementById('prozessname').value = st.pname;
-      if(st.aort     !== undefined) document.getElementById('ablageort').value   = st.aort;
-      if(st.kuerzel  !== undefined) document.getElementById('kuerzel').value     = st.kuerzel;
+      if(st.typ) setTyp(st.typ);
+      if(st.kopf1   !== undefined) document.getElementById('kopf1').value   = st.kopf1;
+      if(st.kopf2   !== undefined) document.getElementById('kopf2').value   = st.kopf2;
+      if(st.kuerzel !== undefined) document.getElementById('kuerzel').value = st.kuerzel;
       if(st.briefName)     document.getElementById('brief-name').value     = st.briefName;
       if(st.briefFunktion) document.getElementById('brief-funktion').value = st.briefFunktion;
       if(st.briefTelefon)  document.getElementById('brief-telefon').value  = st.briefTelefon;

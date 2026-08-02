@@ -16,15 +16,19 @@ abgelegt).
 | 1 Dokumenttyp | Internes Dokument · Externes Dokument · Brief |
 | 2 Format | A4 Hoch · A4 Quer (beim Brief immer A4 Hoch) |
 | 3 Inhalt | Musterinhalt · Inhaltsverzeichnis · Titelblatt (nur A4 Hoch) |
-| 4 Bereich | Sekretariat, Pflege und Betreuung, Hotellerie … oder eigener Text |
-| 5 Metadaten | Dokument-Nr., Prozessname, Ablageort, Kürzel, neue Version; beim Brief das persönliche Profil |
-| 6 Aktualisieren | Fusszeile neu schreiben · Felder und Inhaltsverzeichnis aktualisieren |
+| 4 Kopfzeile | die beiden Zeilen rechts oben, Kürzel, neue Version; beim Brief das persönliche Profil |
+| 5 Aktualisieren | Fusszeile neu schreiben · Felder und Inhaltsverzeichnis aktualisieren |
 
-**Kopfzeile** – zweispaltige Tabelle mit Trennlinie unten, links das Logo,
-rechts zwei Zeilen: `Bereich / Dokument-Nr. Prozessname` (fett) und darunter
-der Ablageort. Genau wie in der Muster-Vorlage
-(«Sekretariat / C 3.4.2 Kreditoren» über «Ordner Kreditoren»). Externe
-Dokumente bekommen nur Logo und Linie, ohne interne Metadaten.
+**Kopfzeile** – zweispaltige Tabelle mit Trennlinie unten, links das
+schwebende Logo, rechts zwei frei erfassbare Zeilen: die erste fett, die
+zweite normal – genau wie in der Muster-Vorlage («Sekretariat / C 3.4.2
+Kreditoren» über «Ordner Kreditoren»). Externe Dokumente bekommen nur Logo
+und Linie, ohne interne Metadaten.
+
+Der Anker des Logos ist bewusst 1:1 aus der Vorlage übernommen (waagrecht am
+linken Seitenrand, senkrecht −1.62 cm ab dem Trägerabsatz nach der Tabelle).
+Ein seitenbezogener Anker setzt Word im Browser nicht um – das Logo landet
+dann mitten im Text.
 
 **Fusszeile** – Tabelle mit Trennlinie oben, links der Adressblock mit
 Wingdings-Rauten als Trennzeichen, rechts «Seite X von Y» und darunter
@@ -62,8 +66,6 @@ Die häufigsten Anpassungen stehen alle zuoberst in
 * `ORG_DEFAULT` – Adresse für die Fusszeile. Sie lässt sich zusätzlich im
   Taskpane unter *Adresse der Fusszeile* ändern; die Änderung merkt sich der
   jeweilige Rechner.
-* `BEREICHE` – Liste der Bereiche für Schritt 4. Der letzte Eintrag
-  («Eigener Bereich») blendet ein Freitextfeld ein.
 * `AAD_CLIENT_ID` – siehe *Active Directory* unten.
 
 Nach jeder Änderung neu bauen und die Build-Nummer erhöhen:

@@ -353,7 +353,7 @@ function main() {
                    telefon: '041 984 29 30', email: 'm.muster@bz-linde.ch' };
   cases.push({
     file: 'Brief.docx',
-    hdrPkg: api.mkBriefHdrPkg('Pflege und Betreuung'),
+    hdrPkg: api.mkBriefHdrPkg(),
     ftrPkg: api.mkFtrPkg(false, org, '', '', false),
     contentPkg: api.mkBriefPkg(person, org, 'Ihre Anfrage vom 12. Juni'),
     sectPr: api.GEO.hoch.pgSz + api.PGMAR_BRIEF
