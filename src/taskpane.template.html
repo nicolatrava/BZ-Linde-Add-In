@@ -646,9 +646,12 @@ function hdrBody(isQuer, showMeta, kopfZeile1, kopfZeile2, logoRid, docprId){
     '<w:insideH w:val="none" w:sz="0" w:space="0" w:color="auto"/>' +
     '<w:insideV w:val="none" w:sz="0" w:space="0" w:color="auto"/>';
 
-  var row1 = P(showMeta ? R(kopfZeile1, {b:true, color:C_TEXT, sz:SZ_HDR}) : '',
+  /* Leer gelassene Felder bekommen den Platzhalter, so wie ihn die
+     Muster-Vorlage zeigt – die Kopfzeile ist dann nie leer und man sieht
+     im Dokument, was noch auszufüllen ist. */
+  var row1 = P(showMeta ? R(kopfZeile1 || 'Prozessname', {b:true, color:C_TEXT, sz:SZ_HDR}) : '',
         {jc:'right', before:0, after:0, rPr:{b:true, color:C_TEXT, sz:SZ_HDR}});
-  var row2 = P(showMeta ? R(kopfZeile2, {color:C_TEXT, sz:SZ_HDR}) : '',
+  var row2 = P(showMeta ? R(kopfZeile2 || 'Ablageort', {color:C_TEXT, sz:SZ_HDR}) : '',
         {jc:'right', before:0, after:0, rPr:{color:C_TEXT, sz:SZ_HDR}});
 
   /* Die linke Spalte bleibt leer und hält den Platz für das Logo frei. Ihre

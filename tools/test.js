@@ -123,3 +123,11 @@ t('Geometrie: ohne sectPr wird eines angelegt',
 
 console.log(failed ? '\n' + failed + ' Test(s) fehlgeschlagen' : '\nalle Tests ok');
 process.exitCode = failed ? 1 : 0;
+
+/* ── Platzhalter in der Kopfzeile ─────────────────────────────────────────── */
+const hdrLeer = S.mkHdrPkg(false, true, '', '');
+t('Kopfzeile leer: Platzhalter Prozessname', hdrLeer.indexOf('Prozessname') > 0, true);
+t('Kopfzeile leer: Platzhalter Ablageort', hdrLeer.indexOf('Ablageort') > 0, true);
+t('Extern: auch ohne Platzhalter', S.mkHdrPkg(false, false, '', '').indexOf('Prozessname'), -1);
+console.log(failed ? failed + ' Test(s) fehlgeschlagen' : 'Platzhalter ok');
+process.exitCode = failed ? 1 : 0;
