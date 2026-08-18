@@ -39,6 +39,19 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:white;font-size:13px
 .tbtn.on{background:var(--green);color:white}
 .tbtn+.tbtn{border-left:1.5px solid var(--green)}
 
+/* ── Vorlagen-Karten ── */
+.cards{display:flex;flex-direction:column;gap:5px}
+.card{border:1.5px solid var(--border);border-radius:8px;padding:9px 13px;
+  cursor:pointer;transition:all .15s;background:white;position:relative}
+.card:hover,.card.on{border-color:var(--green);background:var(--green-light)}
+.card.on{box-shadow:0 0 0 3px rgba(0,166,81,.12)}
+.card-name{font-weight:600;font-size:13px;padding-right:18px}
+.card-addr{font-size:11px;color:#888;margin-top:1px;line-height:1.35}
+.ck{position:absolute;right:11px;top:9px;color:var(--green);font-size:13px;opacity:0}
+.card.on .ck{opacity:1}
+.warn{font-size:11px;color:#b26a00;background:#fff8e6;border-radius:6px;
+  padding:6px 10px;margin-top:8px;line-height:1.4}
+
 /* ── form fields ── */
 .field{margin-bottom:9px}
 .field label{display:block;font-size:11px;font-weight:600;color:#999;
@@ -94,9 +107,26 @@ details.adr[open]>summary:before{content:'\25BE '}
 
 <div class="scroll">
 
-  <!-- Step 1: Dokumenttyp -->
+  <!-- Schritt 1: Vorlage -->
   <div class="step" style="margin-top:14px">
-    <div class="step-title"><span class="sn">1</span>Dokumenttyp</div>
+    <div class="step-title"><span class="sn">1</span>Vorlage</div>
+    <div class="cards" id="vorlagen"></div>
+  </div>
+  <div class="sep"></div>
+
+  <!-- Schritt 2: Angaben zur gewaehlten Vorlage (baut sich dynamisch auf) -->
+  <div class="step hidden" id="felder-step" style="margin-top:14px">
+    <div class="step-title"><span class="sn">2</span>Angaben</div>
+    <div id="felder"></div>
+    <div class="profile-hint">Leer gelassene Felder bleiben als Platzhalter im Dokument stehen.</div>
+  </div>
+  <div class="sep hidden" id="felder-sep"></div>
+
+  <!-- Zweig "Nur Kopf- und Fusszeile": bestehendes Dokument ins CI bringen -->
+  <div id="ci-mode" class="hidden">
+
+  <div class="step" style="margin-top:14px">
+    <div class="step-title"><span class="sn">2</span>Dokumenttyp</div>
     <div class="toggle-row">
       <button class="tbtn on" id="btn-intern" onclick="setTyp('intern')">Int. Dokument</button>
       <button class="tbtn" id="btn-extern" onclick="setTyp('extern')">Ext. Dokument</button>
@@ -105,9 +135,8 @@ details.adr[open]>summary:before{content:'\25BE '}
   </div>
   <div class="sep"></div>
 
-  <!-- Step 2: Format (bei Brief ausgeblendet) -->
   <div class="step" id="fmt-step" style="margin-top:14px">
-    <div class="step-title"><span class="sn">2</span>Format</div>
+    <div class="step-title"><span class="sn">3</span>Format</div>
     <div class="toggle-row">
       <button class="tbtn on" id="btn-hoch" onclick="setFmt('hoch')">A4 Hoch</button>
       <button class="tbtn"    id="btn-quer" onclick="setFmt('quer')">A4 Quer</button>
@@ -117,7 +146,7 @@ details.adr[open]>summary:before{content:'\25BE '}
 
   <!-- Step 3: Kopfzeile und Metadaten -->
   <div class="step" id="meta-step" style="margin-top:14px">
-    <div class="step-title"><span class="sn">3</span>Kopfzeile</div>
+    <div class="step-title"><span class="sn">4</span>Kopfzeile</div>
 
     <!-- Die zwei Zeilen rechts in der Kopfzeile – nur bei internen Dokumenten -->
     <div id="pname-fields">
@@ -186,16 +215,19 @@ details.adr[open]>summary:before{content:'\25BE '}
   <div class="sep"></div>
 
   <div class="step" style="margin-top:14px">
-    <div class="step-title"><span class="sn">4</span>Aktualisieren</div>
+    <div class="step-title"><span class="sn">5</span>Aktualisieren</div>
     <button type="button" class="ad-btn" onclick="updateFooterMeta()">Fusszeile aktualisieren (Name &amp; Datum)</button>
     <button type="button" class="ad-btn" onclick="updateTOC()">Inhaltsverzeichnis / Felder aktualisieren</button>
     <div class="profile-hint">Aktualisiert Adresse, Dokumentname und Datum in der Fusszeile bzw. alle Felder im Dokument &ndash; ohne sonst etwas zu ver&auml;ndern. Version und K&uuml;rzel bleiben stehen.</div>
   </div>
 
+  </div><!-- /ci-mode -->
+
 </div><!-- /scroll -->
 
 <div class="sticky">
   <button class="btn" id="applyBtn" onclick="apply()">Auf Dokument anwenden</button>
+  <div class="warn hidden" id="ersetzt-warn">Ersetzt den gesamten Inhalt des Dokuments.</div>
   <div class="status" id="status"></div>
   <div class="build">Build @@BUILD@@</div>
 </div>
@@ -226,6 +258,88 @@ var ORG_DEFAULT = {
   mail:    'info@bz-linde.ch',
   web:     'www.bz-linde.ch'
 };
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Vorlagen
+   Die .docx-Dateien liegen neben dieser Seite und werden beim Anwenden
+   geladen. Damit stammt die ganze Gestaltung aus den Originaldateien der
+   Linde - Kopfzeile, Fusszeile, Stile und Logo inbegriffen. Nachgebaut wird
+   nichts. Platzhalter in geschweiften Doppelklammern werden nach dem
+   Einfuegen durch die Eingaben ersetzt; {{DATUM}} immer durch das Tagesdatum.
+   ═══════════════════════════════════════════════════════════════════════════ */
+var VORLAGEN = [
+  { id:'brief', datei:'vorlagen/brief.docx', name:'Brief',
+    info:'Empfängeradresse, Betreff, Grussformel', felder:[] },
+  { id:'protokoll', datei:'vorlagen/protokoll.docx', name:'Protokoll',
+    info:'Traktandenliste, Pendenzen, Verteiler', felder:[] },
+  { id:'prozess', datei:'vorlagen/prozess.docx', name:'Prozess',
+    info:'Ablauftabelle: Grafik · Tätigkeit · Wer · Hilfsmittel',
+    felder:[
+      {ph:'PROZESSGRUPPE', label:'Prozessgruppe', hint:'z.B. C Unterstützungsprozesse / C3 Sekretariat'},
+      {ph:'PROZESSNR',     label:'Prozess-Nr.',   hint:'z.B. C3.3.1'},
+      {ph:'PROZESSNAME',   label:'Prozessname',   hint:'z.B. Personaladministration'}
+    ] },
+  { id:'steckbrief', datei:'vorlagen/prozess-steckbrief.docx', name:'Prozess-Steckbrief',
+    info:'Ziel, Input/Output, Messgrössen, Chancen und Risiken',
+    felder:[
+      {ph:'PROZESSGRUPPE',  label:'Prozessgruppe',  hint:'z.B. B Kernprozesse'},
+      {ph:'PROZESSBEREICH', label:'Prozessbereich', hint:'z.B. B1 Pflege und Betreuung'},
+      {ph:'PROZESSNR',      label:'Prozess-Nr.',    hint:'z.B. B1.6'},
+      {ph:'PROZESSNAME',    label:'Prozessname',    hint:'z.B. Sterbebegleitung'}
+    ] },
+  { id:'qms', datei:'vorlagen/qms-hilfsmittel.docx', name:'QMS-Hilfsmittel',
+    info:'Richtlinie oder Merkblatt: Ziel, Grundsätze, Vorgehen, Hinweise',
+    felder:[
+      {ph:'BEREICH',     label:'Bereich',     hint:'z.B. Pflege und Betreuung'},
+      {ph:'NUMMER',      label:'Nummer',      hint:'z.B. B1.6'},
+      {ph:'DOKUMENTART', label:'Dokumentart', hint:'z.B. Richtlinie'},
+      {ph:'TITEL',       label:'Titel',       hint:'z.B. Palliative Care'}
+    ] },
+  { id:'ci', datei:null, name:'Nur Kopf- und Fusszeile',
+    info:'Bestehendes Dokument ins CI bringen, Text bleibt unverändert', felder:[] }
+];
+var vorlage = null;
+
+function buildVorlagen(){
+  var h = '';
+  for(var i=0;i<VORLAGEN.length;i++){
+    h += '<div class="card" data-i="'+i+'" onclick="selVorlage(this)">' +
+           '<span class="ck">&#10003;</span>' +
+           '<div class="card-name">'+VORLAGEN[i].name+'</div>' +
+           '<div class="card-addr">'+VORLAGEN[i].info+'</div>' +
+         '</div>';
+  }
+  document.getElementById('vorlagen').innerHTML = h;
+}
+
+function selVorlage(el){
+  var cards = document.querySelectorAll('#vorlagen .card');
+  for(var i=0;i<cards.length;i++){ cards[i].className = 'card'; }
+  el.className = 'card on';
+  vorlage = VORLAGEN[parseInt(el.getAttribute('data-i'),10)];
+  var istCI = (vorlage.id === 'ci');
+  document.getElementById('ci-mode').className = istCI ? '' : 'hidden';
+  document.getElementById('ersetzt-warn').className = 'warn' + (istCI ? ' hidden' : '');
+  buildFelder();
+}
+
+function buildFelder(){
+  var step = document.getElementById('felder-step');
+  var sep  = document.getElementById('felder-sep');
+  var host = document.getElementById('felder');
+  var f = (vorlage && vorlage.felder) || [];
+  if(!f.length){
+    step.className = 'step hidden'; sep.className = 'sep hidden'; host.innerHTML = '';
+    return;
+  }
+  var h = '';
+  for(var i=0;i<f.length;i++){
+    h += '<div class="field"><label>'+f[i].label+'</label>' +
+         '<input type="text" id="ph-'+f[i].ph+'" placeholder="'+f[i].hint+'"/></div>';
+  }
+  host.innerHTML = h;
+  step.className = 'step'; sep.className = 'sep';
+}
 
 /* ═══════════════════════════════════════════════════════════════════════════
    UI-Zustand
@@ -753,11 +867,114 @@ function setPageGeometry(pkgXml, isQuer, isBrief){
   return out;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   Vorlage ins Dokument legen
+   ═══════════════════════════════════════════════════════════════════════════ */
+/* .docx neben dieser Seite holen und nach base64 wandeln. */
+function ladeVorlage(datei){
+  return fetch(datei, {cache:'no-cache'}).then(function(r){
+    if(!r.ok) throw new Error('Vorlage nicht gefunden (' + r.status + ')');
+    return r.arrayBuffer();
+  }).then(function(buf){
+    var bytes = new Uint8Array(buf), teile = [], schritt = 8192;
+    for(var i=0;i<bytes.length;i+=schritt){
+      teile.push(String.fromCharCode.apply(null, bytes.subarray(i, i+schritt)));
+    }
+    return btoa(teile.join(''));
+  });
+}
+
+/* Datum wie in der Brief-Vorlage: «18. August 2026» */
+var MONATE = ['Januar','Februar','März','April','Mai','Juni','Juli','August',
+              'September','Oktober','November','Dezember'];
+function heuteAusgeschrieben(){
+  var d = new Date();
+  return d.getDate() + '. ' + MONATE[d.getMonth()] + ' ' + d.getFullYear();
+}
+
+/* Platzhalter im Rumpf und in allen Kopf-/Fusszeilen ersetzen. */
+function fuellePlatzhalter(ctx, werte){
+  var schluessel = Object.keys(werte);
+  if(!schluessel.length) return ctx.sync();
+  var sects = ctx.document.sections;
+  sects.load('items');
+  return ctx.sync().then(function(){
+    var ziele = [ctx.document.body];
+    sects.items.forEach(function(sec){
+      ['primary','firstPage','evenPages'].forEach(function(k){
+        try{ ziele.push(sec.getHeader(k)); ziele.push(sec.getFooter(k)); }catch(e){}
+      });
+    });
+    var treffer = [];
+    schluessel.forEach(function(ph){
+      ziele.forEach(function(z){
+        try{
+          var r = z.search('{{' + ph + '}}', {matchCase:true});
+          r.load('items');
+          treffer.push({res:r, wert:werte[ph]});
+        }catch(e){}
+      });
+    });
+    return ctx.sync().then(function(){
+      treffer.forEach(function(t){
+        for(var i=0;i<t.res.items.length;i++){
+          try{ t.res.items[i].insertText(t.wert, 'Replace'); }catch(e){}
+        }
+      });
+      return ctx.sync();
+    });
+  });
+}
+
+function wendeVorlageAn(v, btn){
+  var werte = { DATUM: heuteAusgeschrieben() };
+  (v.felder || []).forEach(function(f){
+    var el = document.getElementById('ph-' + f.ph);
+    var wert = el ? el.value.trim() : '';
+    if(wert) werte[f.ph] = wert;      /* leer lassen heisst: Platzhalter bleibt */
+  });
+
+  var ganzesDokument = false;
+  try{ ganzesDokument = Office.context.requirements.isSetSupported('WordApi','1.5'); }catch(e){}
+
+  ladeVorlage(v.datei).then(function(b64){
+    return Word.run(function(ctx){
+      if(ganzesDokument){
+        ctx.document.insertFileFromBase64(b64, 'Replace');
+      } else {
+        /* Aeltere Word-Versionen koennen nur den Rumpf ersetzen; Kopf- und
+           Fusszeile der Vorlage kommen dann nicht mit. */
+        ctx.document.body.insertFileFromBase64(b64, 'Replace');
+      }
+      return ctx.sync().then(function(){
+        return fuellePlatzhalter(ctx, werte);
+      }).then(function(){
+        try{
+          Office.context.document.settings.set('lindeVorlage', v.id);
+          Office.context.document.settings.saveAsync(function(){});
+        }catch(e){}
+        showStatus(ganzesDokument
+          ? '✓ Vorlage «' + v.name + '» eingesetzt'
+          : '✓ «' + v.name + '» eingesetzt – diese Word-Version übernimmt Kopf- und Fusszeile nicht', 'ok');
+        btn.disabled = false;
+        btn.textContent = 'Auf Dokument anwenden';
+      });
+    });
+  }).catch(function(e){
+    showStatus('Fehler: ' + (e.message || String(e)), 'err');
+    btn.disabled = false;
+    btn.textContent = 'Auf Dokument anwenden';
+  });
+}
+
 function apply(){
   var btn = document.getElementById('applyBtn');
+  if(!vorlage){ showStatus('Bitte zuerst eine Vorlage wählen', 'err'); return; }
   btn.disabled = true;
   btn.textContent = 'Wird angewendet…';
   document.getElementById('status').className = 'status';
+
+  if(vorlage.datei){ wendeVorlageAn(vorlage, btn); return; }
 
   _applyN++;
 
@@ -923,6 +1140,7 @@ Office.onReady(function(info){
     document.body.innerHTML = '<div style="padding:24px;color:#c62828">Nur in Microsoft Word verfügbar.</div>';
     return;
   }
+  buildVorlagen();
   refreshDocName();
   setFmt('hoch');
   setTyp('intern');
@@ -955,6 +1173,13 @@ Office.onReady(function(info){
       if(!st) return;
       if(st.fmt) setFmt(st.fmt);
       if(st.typ) setTyp(st.typ);
+      var zuletzt = Office.context.document.settings.get('lindeVorlage');
+      if(zuletzt){
+        var karten = document.querySelectorAll('#vorlagen .card');
+        for(var k=0;k<karten.length;k++){
+          if(VORLAGEN[k] && VORLAGEN[k].id === zuletzt){ selVorlage(karten[k]); break; }
+        }
+      }
       if(st.kopf1   !== undefined) document.getElementById('kopf1').value   = st.kopf1;
       if(st.kopf2   !== undefined) document.getElementById('kopf2').value   = st.kopf2;
       if(st.kuerzel !== undefined) document.getElementById('kuerzel').value = st.kuerzel;

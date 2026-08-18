@@ -1,24 +1,49 @@
 # Linde Dokumentenvorlagen – Word-Add-In
 
-Word-Add-In für das Betagtenzentrum Linde Grosswangen. Es setzt Kopfzeile,
-Fusszeile und Seitenformat eines bestehenden Word-Dokuments auf die Gestaltung
-aus `Muster_Dokument_A4_hoch.docx` (in diesem Repository abgelegt).
-
+Word-Add-In für das Betagtenzentrum Linde Grosswangen. Es legt die
+Hausvorlagen in ein Word-Dokument und bringt bestehende Dokumente ins CI.
 Aufbau und Bedienung folgen dem BWH-Add-In
-([nicolatrava/bwh-addin](https://github.com/nicolatrava/bwh-addin)). Bewusst
-**nicht** übernommen sind dessen Musterinhalt, Inhaltsverzeichnis und
-Titelblatt: dafür gibt es bei der Linde keine eigene Vorlage, und erfundener
-Inhalt wäre schlechter als gar keiner. Sobald ein echtes Musterdokument
-vorliegt, lässt es sich als weiterer Baustein ergänzen.
+([nicolatrava/bwh-addin](https://github.com/nicolatrava/bwh-addin)).
 
 ## Was das Add-In macht
 
+**Schritt 1 – Vorlage**
+
+| Vorlage | Inhalt |
+|---|---|
+| Brief | Empfängeradresse, Betreff, Grussformel |
+| Protokoll | Traktandenliste, Pendenzen, Verteiler |
+| Prozess | Ablauftabelle: Grafik · Tätigkeit · Wer · Hilfsmittel |
+| Prozess-Steckbrief | Ziel, Input/Output, Messgrössen, Chancen und Risiken |
+| QMS-Hilfsmittel | Richtlinie oder Merkblatt: Ziel, Grundsätze, Vorgehen, Hinweise |
+| Nur Kopf- und Fusszeile | bestehendes Dokument ins CI bringen, Text bleibt |
+
+**Schritt 2 – Angaben.** Je nach Vorlage Prozessgruppe, Prozess-Nr.,
+Prozessname, Bereich, Dokumentart oder Titel. Was leer bleibt, bleibt als
+Platzhalter im Dokument stehen. Das Datum setzt das Add-In immer selbst.
+
+Die fünf Vorlagen werden **nicht nachgebaut**: unter `vorlagen/` liegen die
+Original-.docx der Linde, das Add-In holt die gewählte Datei und legt sie mit
+`insertFileFromBase64` ins Dokument. Damit stammen Kopfzeile, Fusszeile,
+Stile und Logo eins zu eins aus den Originalen. Anschliessend ersetzt das
+Add-In die Platzhalter `{{...}}` in Rumpf, Kopf- und Fusszeilen.
+
+> Eine Vorlage einzusetzen **ersetzt das ganze Dokument**. Der Zweig
+> «Nur Kopf- und Fusszeile» lässt den Text unangetastet.
+
+Word braucht dafür WordApi 1.5. Ältere Versionen bekommen nur den Rumpf
+eingesetzt; das Add-In sagt das im Statustext.
+
+### Nur Kopf- und Fusszeile
+
 | Schritt | Auswahl |
 |---|---|
-| 1 Dokumenttyp | Internes Dokument · Externes Dokument · Brief |
-| 2 Format | A4 Hoch · A4 Quer (beim Brief immer A4 Hoch) |
-| 3 Kopfzeile | die beiden Zeilen rechts oben, Kürzel, neue Version |
-| 4 Aktualisieren | Fusszeile neu schreiben · Felder und Inhaltsverzeichnis aktualisieren |
+| 2 Dokumenttyp | Internes Dokument · Externes Dokument · Brief |
+| 3 Format | A4 Hoch · A4 Quer (beim Brief immer A4 Hoch) |
+| 4 Kopfzeile | die beiden Zeilen rechts oben, Kürzel, neue Version |
+| 5 Aktualisieren | Fusszeile neu schreiben · Felder und Inhaltsverzeichnis aktualisieren |
+
+Gestaltung nach `Muster_Dokument_A4_hoch.docx` (in diesem Repository abgelegt).
 
 **Kopfzeile** – zweispaltige Tabelle mit Trennlinie unten, links das
 schwebende Logo, rechts zwei frei erfassbare Zeilen: die erste fett, die
@@ -62,6 +87,31 @@ Das Add-In liegt auf GitHub Pages unter
 
 Danach erscheint in Word auf dem Register *Start* die Gruppe **Linde Vorlagen**.
 
+## Vorlagen pflegen
+
+Die Originale kommen ausgefüllt aus dem Betrieb und enthalten echte
+Personendaten – Empfängeradressen, Namen von Mitarbeitenden, Pfade aus dem
+P-Laufwerk – sowie Rückstände der Fremdvorlage, aus der die Protokoll-Vorlage
+stammt (SSBL Luzern, bis hinein in `settings.xml` und `theme1.xml`).
+**Dieses Repository ist öffentlich: die Originale gehören nicht hinein.**
+
+`tools/clean-vorlagen.py` macht daraus leere Vorlagen und protokolliert jede
+Ersetzung. Zum Schluss läuft eine Sperrliste über jede erzeugte Datei; schlägt
+sie an, bricht das Skript ab.
+
+```bash
+python3 tools/clean-vorlagen.py /pfad/zu/den/originalen
+python3 tools/check-vorlagen.py     # Platzhalter gegen die Felder im Add-In
+```
+
+`tools/check-vorlagen.py` vergleicht beide Richtungen: ein `{{...}}` ohne
+Eingabefeld bliebe im fertigen Dokument stehen, ein Eingabefeld ohne
+Platzhalter liefe ins Leere.
+
+Neue Vorlage aufnehmen: Datei nach `vorlagen/`, Eintrag im `VORLAGEN`-Array in
+`src/taskpane.template.html`, Platzhalter in Grossbuchstaben in die Datei
+schreiben, `check-vorlagen.py` laufen lassen.
+
 ## Anpassen
 
 Die häufigsten Anpassungen stehen alle zuoberst in
@@ -74,7 +124,7 @@ Die häufigsten Anpassungen stehen alle zuoberst in
 Nach jeder Änderung neu bauen und die Build-Nummer erhöhen:
 
 ```bash
-echo 5 > BUILD          # Build-Nummer hochzählen
+echo 6 > BUILD          # Build-Nummer hochzählen
 python3 build.py        # erzeugt taskpane.html
 node tools/test.js      # Bedienlogik und OOXML prüfen
 ```
@@ -92,9 +142,12 @@ build.py                        baut taskpane.html aus src/ und assets/
 BUILD                           Build-Nummer, erscheint unten im Taskpane
 assets/logo-dok.png             Logo, freigestellt aus der Muster-Vorlage
 icon16/32/80.png                Symbole für das Menüband
+vorlagen/*.docx                 die fünf Hausvorlagen, bereinigt
 tools/test.js                   Schnelltest ohne Word
 tools/preview.js                erzeugt Beispiel-Dokumente als .docx
-Muster_Dokument_A4_hoch.docx    Ausgangsvorlage
+tools/clean-vorlagen.py         macht aus ausgefüllten Originalen leere Vorlagen
+tools/check-vorlagen.py         Platzhalter gegen die Felder im Add-In prüfen
+Muster_Dokument_A4_hoch.docx    Ausgangsvorlage für Kopf-/Fusszeile
 ```
 
 `tools/preview.js` schreibt fertige Word-Dateien aller Varianten nach
