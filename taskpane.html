@@ -229,7 +229,7 @@ details.adr[open]>summary:before{content:'\25BE '}
   <button class="btn" id="applyBtn" onclick="apply()">Auf Dokument anwenden</button>
   <div class="warn hidden" id="ersetzt-warn">Ersetzt den gesamten Inhalt des Dokuments.</div>
   <div class="status" id="status"></div>
-  <div class="build">Build 5</div>
+  <div class="build">Build 6</div>
 </div>
 
 <script>
@@ -269,15 +269,27 @@ var ORG_DEFAULT = {
    ═══════════════════════════════════════════════════════════════════════════ */
 var VORLAGEN = [
   { id:'brief', datei:'vorlagen/brief.docx', name:'Brief',
-    info:'Empfängeradresse, Betreff, Grussformel', felder:[] },
+    info:'Empfängeradresse, Betreff, Grussformel',
+    felder:[
+      {ph:'ANREDE',     label:'Anrede',        hint:'z.B. Frau'},
+      {ph:'EMPFAENGER', label:'Vorname Name',  hint:'z.B. Maria Muster'},
+      {ph:'STRASSE',    label:'Strasse Nr.',   hint:'z.B. Dorfstrasse 12'},
+      {ph:'PLZORT',     label:'PLZ Ort',       hint:'z.B. 6022 Grosswangen'},
+      {ph:'BETREFF',    label:'Betreff',       hint:'Worum es im Brief geht'},
+      {ph:'ABSENDER',   label:'Absender',      hint:'Vorname, Name, Bezeichnung/Abteilung'}
+    ] },
   { id:'protokoll', datei:'vorlagen/protokoll.docx', name:'Protokoll',
-    info:'Traktandenliste, Pendenzen, Verteiler', felder:[] },
+    info:'Traktandenliste, Pendenzen, Verteiler',
+    felder:[
+      {ph:'BETREFF', label:'Betreff', hint:'z.B. Teamsitzung Pflege'}
+    ] },
   { id:'prozess', datei:'vorlagen/prozess.docx', name:'Prozess',
     info:'Ablauftabelle: Grafik · Tätigkeit · Wer · Hilfsmittel',
     felder:[
       {ph:'PROZESSGRUPPE', label:'Prozessgruppe', hint:'z.B. C Unterstützungsprozesse / C3 Sekretariat'},
       {ph:'PROZESSNR',     label:'Prozess-Nr.',   hint:'z.B. C3.3.1'},
-      {ph:'PROZESSNAME',   label:'Prozessname',   hint:'z.B. Personaladministration'}
+      {ph:'PROZESSNAME',   label:'Prozessname',   hint:'z.B. Personaladministration'},
+      {ph:'VERANTWORTUNG', label:'Prozessverantwortung', hint:'Vorname Name'}
     ] },
   { id:'steckbrief', datei:'vorlagen/prozess-steckbrief.docx', name:'Prozess-Steckbrief',
     info:'Ziel, Input/Output, Messgrössen, Chancen und Risiken',
@@ -285,7 +297,8 @@ var VORLAGEN = [
       {ph:'PROZESSGRUPPE',  label:'Prozessgruppe',  hint:'z.B. B Kernprozesse'},
       {ph:'PROZESSBEREICH', label:'Prozessbereich', hint:'z.B. B1 Pflege und Betreuung'},
       {ph:'PROZESSNR',      label:'Prozess-Nr.',    hint:'z.B. B1.6'},
-      {ph:'PROZESSNAME',    label:'Prozessname',    hint:'z.B. Sterbebegleitung'}
+      {ph:'PROZESSNAME',    label:'Prozessname',    hint:'z.B. Sterbebegleitung'},
+      {ph:'VERANTWORTLICH', label:'Prozessverantwortliche', hint:'z.B. PDL'}
     ] },
   { id:'qms', datei:'vorlagen/qms-hilfsmittel.docx', name:'QMS-Hilfsmittel',
     info:'Richtlinie oder Merkblatt: Ziel, Grundsätze, Vorgehen, Hinweise',
@@ -934,34 +947,51 @@ function wendeVorlageAn(v, btn){
     if(wert) werte[f.ph] = wert;      /* leer lassen heisst: Platzhalter bleibt */
   });
 
-  var ganzesDokument = false;
-  try{ ganzesDokument = Office.context.requirements.isSetSupported('WordApi','1.5'); }catch(e){}
+  var kannGanzes = false;
+  try{ kannGanzes = Office.context.requirements.isSetSupported('WordApi','1.5'); }catch(e){}
+
+  /* Einmal einsetzen. ganz=true nimmt Kopf- und Fusszeile mit, ganz=false
+     nur den Rumpf. Ein fehlgeschlagener Aufruf macht den Kontext unbrauchbar,
+     darum bekommt jeder Versuch sein eigenes Word.run. */
+  function einsetzen(b64, ganz){
+    return Word.run(function(ctx){
+      if(ganz){ ctx.document.insertFileFromBase64(b64, 'Replace'); }
+      else    { ctx.document.body.insertFileFromBase64(b64, 'Replace'); }
+      return ctx.sync();
+    });
+  }
+
+  function fertig(ganz){
+    return Word.run(function(ctx){
+      return fuellePlatzhalter(ctx, werte);
+    }).catch(function(){ /* Platzhalter sind Kür, nicht Pflicht */ }).then(function(){
+      try{
+        Office.context.document.settings.set('lindeVorlage', v.id);
+        Office.context.document.settings.saveAsync(function(){});
+      }catch(e){}
+      showStatus(ganz
+        ? '✓ Vorlage «' + v.name + '» eingesetzt'
+        : '✓ «' + v.name + '» eingesetzt – ohne Kopf- und Fusszeile, diese Word-Version kann das nicht', 'ok');
+      btn.disabled = false;
+      btn.textContent = 'Auf Dokument anwenden';
+    });
+  }
 
   ladeVorlage(v.datei).then(function(b64){
-    return Word.run(function(ctx){
-      if(ganzesDokument){
-        ctx.document.insertFileFromBase64(b64, 'Replace');
-      } else {
-        /* Aeltere Word-Versionen koennen nur den Rumpf ersetzen; Kopf- und
-           Fusszeile der Vorlage kommen dann nicht mit. */
-        ctx.document.body.insertFileFromBase64(b64, 'Replace');
-      }
-      return ctx.sync().then(function(){
-        return fuellePlatzhalter(ctx, werte);
-      }).then(function(){
-        try{
-          Office.context.document.settings.set('lindeVorlage', v.id);
-          Office.context.document.settings.saveAsync(function(){});
-        }catch(e){}
-        showStatus(ganzesDokument
-          ? '✓ Vorlage «' + v.name + '» eingesetzt'
-          : '✓ «' + v.name + '» eingesetzt – diese Word-Version übernimmt Kopf- und Fusszeile nicht', 'ok');
-        btn.disabled = false;
-        btn.textContent = 'Auf Dokument anwenden';
+    if(!kannGanzes) return einsetzen(b64, false).then(function(){ return fertig(false); });
+    return einsetzen(b64, true).then(function(){ return fertig(true); })
+      .catch(function(){
+        /* Word verweigert das Ersetzen des ganzen Dokuments – dann wenigstens
+           den Rumpf. Kommt etwa vor, wenn das Dokument geschützt ist. */
+        return einsetzen(b64, false).then(function(){ return fertig(false); });
       });
-    });
   }).catch(function(e){
-    showStatus('Fehler: ' + (e.message || String(e)), 'err');
+    var t = (e && (e.message || e.description)) || String(e);
+    if(/GeneralException|OfficeExtension/i.test(t)){
+      t = 'Word konnte die Vorlage nicht einsetzen. Bitte ein leeres, ' +
+          'gespeichertes Dokument öffnen und nochmals versuchen.';
+    }
+    showStatus('Fehler: ' + t, 'err');
     btn.disabled = false;
     btn.textContent = 'Auf Dokument anwenden';
   });

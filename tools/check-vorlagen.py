@@ -11,7 +11,12 @@ Weicht das voneinander ab, bleibt entweder ein Platzhalter im fertigen
 Dokument stehen oder ein Eingabefeld laeuft ins Leere. Beides faellt sonst
 erst auf, wenn jemand in Word damit arbeitet.
 
-Ausserdem laeuft die Sperrliste aus clean-vorlagen.py nochmals ueber die
+Geprueft wird ausserdem, ob jedes in mc:Ignorable aufgezaehlte Namensraum-
+Praefix an der Wurzel auch deklariert ist. Fehlt eines, ist die Datei formal
+ungueltig: Word bricht beim Einsetzen mit GeneralException ab, waehrend
+LibreOffice sie klaglos oeffnet - der Fehler faellt sonst erst in Word auf.
+
+Und die Sperrliste aus clean-vorlagen.py laeuft nochmals ueber die
 eingecheckten Dateien - das Repository ist oeffentlich.
 """
 
@@ -52,6 +57,31 @@ def platzhalter_in_docx(pfad: pathlib.Path) -> set:
         nur_text = re.sub(r"<[^>]+>", "", xml)
         gefunden |= set(PLATZHALTER.findall(nur_text))
     return gefunden
+
+
+WURZEL = re.compile(r"<w:(?:document|hdr|ftr)\b[^>]*>")
+
+
+def namensraeume_pruefen(pfad: pathlib.Path) -> list:
+    """Jedes Praefix aus mc:Ignorable muss an der Wurzel deklariert sein."""
+    probleme = []
+    z = zipfile.ZipFile(pfad)
+    for name in z.namelist():
+        if not re.match(r"word/(document|header\d+|footer\d+)\.xml$", name):
+            continue
+        xml = z.read(name).decode("utf-8", "replace")
+        m = WURZEL.search(xml)
+        if not m:
+            probleme.append("%s: kein Wurzel-Element" % name)
+            continue
+        wurzel = m.group(0)
+        deklariert = set(re.findall(r'xmlns:([A-Za-z0-9]+)=', wurzel))
+        ign = re.search(r'mc:Ignorable="([^"]*)"', wurzel)
+        for praefix in (ign.group(1).split() if ign else []):
+            if praefix not in deklariert:
+                probleme.append("%s: mc:Ignorable nennt %r, aber xmlns:%s fehlt"
+                                % (name, praefix, praefix))
+    return probleme
 
 
 def felder_aus_taskpane() -> dict:
@@ -104,6 +134,9 @@ def main() -> int:
             if wort.lower() in text:
                 fehler.append("%s: Sperrliste - %r steckt noch drin" % (rel, wort))
 
+        for problem in namensraeume_pruefen(pfad):
+            fehler.append("%s: %s" % (rel, problem))
+
     for rel in felder:
         if not (ROOT / rel).exists():
             fehler.append("%s: im Add-In angeboten, Datei fehlt aber" % rel)
@@ -113,7 +146,8 @@ def main() -> int:
         for f in fehler:
             print("  " + f, file=sys.stderr)
         return 1
-    print("\nVorlagen und Add-In passen zusammen, Sperrliste sauber.")
+    print("\nVorlagen und Add-In passen zusammen, Namensraeume vollstaendig, "
+          "Sperrliste sauber.")
     return 0
 
 

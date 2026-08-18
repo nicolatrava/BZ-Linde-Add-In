@@ -77,12 +77,14 @@ VORLAGEN = [
         "ziel": "brief.docx",
         "titel": "Brief",
         "schritte": [
-            ("run", DOC, 6, "Frau", "Anrede"),
-            ("run", DOC, 7, "Sina Joachim", "Vorname Name"),
-            ("run", DOC, 7, "Dorf 27", "Strasse Nr."),
+            ("run", DOC, 6, "Frau", "{{ANREDE}}"),
+            ("run", DOC, 7, "Sina Joachim", "{{EMPFAENGER}}"),
+            ("run", DOC, 7, "Dorf 27", "{{STRASSE}}"),
             ("run", DOC, 8, "6", ""),
-            ("run", DOC, 8, "018 Buttisholz", "PLZ Ort"),
+            ("run", DOC, 8, "018 Buttisholz", "{{PLZORT}}"),
             ("run", DOC, 13, "18. August 2026", "{{DATUM}}"),
+            ("run", DOC, 17, "Betreff:", "Betreff: {{BETREFF}}"),
+            ("run", DOC, 41, "Vorname, Name, Bezeichnung/Abteilung", "{{ABSENDER}}"),
         ],
     },
     {
@@ -92,7 +94,9 @@ VORLAGEN = [
         # Der Ort im Datumsfeld ist ein DOCPROPERTY der Fremdvorlage und wird
         # von GLOBAL_ERSETZEN auf Grosswangen gezogen; das Datum ist ein
         # DATE-Feld und aktualisiert sich selbst.
-        "schritte": [],
+        "schritte": [
+            ("run", DOC, 0, ": Betreff", ": {{BETREFF}}"),
+        ],
     },
     {
         "quelle": "Prozess-Steckbrief - Vorlage Neu.docx",
@@ -106,7 +110,7 @@ VORLAGEN = [
             ("nach", DOC, 15), ("nach", DOC, 17), ("nach", DOC, 19),
             ("nach", DOC, 21), ("nach", DOC, 23), ("nach", DOC, 24),
             ("nach", DOC, 26), ("nach", DOC, 28),
-            ("run", DOC, 30, "PDL", ""),
+            ("run", DOC, 30, "PDL", "{{VERANTWORTLICH}}"),
         ],
     },
     {
@@ -118,7 +122,7 @@ VORLAGEN = [
              "C Unterstützungsprozesse / C3 Sekretariat", "{{PROZESSGRUPPE}}"),
             ("run", "word/header1.xml", 0,
              "C3.3.1 Personaladministration", "{{PROZESSNR}} {{PROZESSNAME}}"),
-            ("run", "word/header1.xml", 1, "Isabella Wüest", ""),
+            ("run", "word/header1.xml", 1, "Isabella Wüest", "{{VERANTWORTUNG}}"),
             ("run", "word/footer1.xml", 1, "Erstelldatum: 02.12.2014", "Erstelldatum: {{DATUM}}"),
             ("run", "word/footer1.xml", 2, "30.11.2023", ""),
             # Der ganze Rumpf ab der zweiten Tabellenzeile ist das Beispiel.
@@ -145,9 +149,48 @@ VORLAGEN = [
 ]
 
 
+ROOT_TAG = re.compile(rb"<(w:document|w:hdr|w:ftr|w:settings)\b[^>]*>")
+
+
+def serialisieren(root, original: bytes) -> bytes:
+    """Baum zurueckschreiben und die Namensraeume beider Seiten vereinen.
+
+    ElementTree gibt nur die Namensraeume aus, die im Baum wirklich benutzt
+    werden. Eine Word-Datei deklariert an der Wurzel aber rund drei Dutzend
+    und zaehlt einen Teil davon in mc:Ignorable auf. Faellt eine Deklaration
+    weg, die dort noch steht, ist die Datei formal ungueltig: Word bricht mit
+    GeneralException ab, waehrend LibreOffice sie klaglos oeffnet.
+
+    Umgekehrt vergibt ElementTree fuer Namensraeume, die es nicht kennt,
+    eigene Praefixe (ns0, ns1 ...) und deklariert sie an SEINER Wurzel. Das
+    Wurzel-Tag einfach durch das alte zu ersetzen, reisst die wieder weg -
+    dann ist die Datei an anderer Stelle kaputt ("unbound prefix").
+
+    Darum: das Wurzel-Tag von ElementTree behalten und nur die Deklarationen
+    ergaenzen, die im Original standen und dort fehlen.
+    """
+    m_alt = ROOT_TAG.search(original)
+    if not m_alt:
+        raise SystemExit("Wurzel-Element nicht gefunden")
+    alt_tag = m_alt.group(0).decode("utf-8")
+
+    neu = ET.tostring(root, encoding="unicode")
+    m_neu = re.match(r"<[^>]+>", neu)
+    neu_tag = m_neu.group(0)
+
+    schon_da = set(re.findall(r'xmlns:([A-Za-z0-9]+)=', neu_tag))
+    ergaenzen = [d for d in re.findall(r'xmlns:[A-Za-z0-9]+="[^"]*"', alt_tag)
+                 if re.match(r'xmlns:([A-Za-z0-9]+)=', d).group(1) not in schon_da]
+    if ergaenzen:
+        neu_tag = neu_tag[:-1].rstrip() + " " + " ".join(ergaenzen) + ">"
+
+    kopf = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n'
+    return (kopf + neu_tag + neu[m_neu.end():]).encode("utf-8")
+
+
 def register_namespaces(xml: bytes) -> None:
     """Namensraum-Praefixe erhalten, sonst schreibt ElementTree ns0, ns1 ..."""
-    for m in re.finditer(rb'xmlns:([A-Za-z0-9]+)="([^"]+)"', xml[:6000]):
+    for m in re.finditer(rb'xmlns:([A-Za-z0-9]+)="([^"]+)"', xml):
         ET.register_namespace(m.group(1).decode(), m.group(2).decode())
 
 
@@ -290,8 +333,10 @@ def clean(src: pathlib.Path, spec: dict) -> pathlib.Path:
         if re.match(r"word/(document|header\d+|footer\d+)\.xml$", name):
             parts.setdefault(name, None)
 
+    roh = {}
     for part in list(parts):
         raw = zin.read(part)
+        roh[part] = raw
         register_namespaces(raw)
         parts[part] = ET.fromstring(raw)
 
@@ -318,8 +363,7 @@ def clean(src: pathlib.Path, spec: dict) -> pathlib.Path:
     with zipfile.ZipFile(ziel, "w", zipfile.ZIP_DEFLATED) as zout:
         for item in zin.infolist():
             if item.filename in parts:
-                data = ET.tostring(parts[item.filename], encoding="UTF-8",
-                                   xml_declaration=True)
+                data = serialisieren(parts[item.filename], roh[item.filename])
             else:
                 data = zin.read(item.filename)
             if item.filename == "word/settings.xml":
