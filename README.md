@@ -132,6 +132,28 @@ node tools/test.js      # Bedienlogik und OOXML prüfen
 Ausserdem in `manifest.xml` die `?v=`-Nummer der drei URLs und die `<Version>`
 erhöhen, damit Word die neue Fassung lädt und nicht die zwischengespeicherte.
 
+### Ausrollen
+
+`main` **allein** pushen:
+
+```bash
+git push origin main
+```
+
+Werden mehrere Branches in einem Befehl gepusht (`git push origin main feature`),
+startet GitHub Pages keinen Build – der Push kommt als ein Ereignis an und
+Pages sieht `main` nicht. Das Repository liegt dann neu, die ausgelieferte
+Seite aber weiterhin auf dem alten Stand, und zwar für alle: Desktop wie Web.
+Cache-Löschen hilft dagegen nichts.
+
+Nach dem Push kontrollieren, ob wirklich deployt wurde – unter *Actions* muss
+ein neuer Lauf «pages build and deployment» auf dem gepushten Commit stehen.
+Bleibt er aus, einen leeren Commit nachschieben:
+
+```bash
+git commit --allow-empty -m "Pages-Deployment anstossen" && git push origin main
+```
+
 ## Entwicklung
 
 ```
