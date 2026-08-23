@@ -5,14 +5,14 @@
            xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
            xsi:type="TaskPaneApp">
   <Id>64d96a14-f4a9-4ed9-9ccf-6b45c5a4ceb2</Id>
-  <Version>1.1.1.0</Version>
+  <Version>1.1.2.0</Version>
   <ProviderName>Betagtenzentrum Linde Grosswangen</ProviderName>
   <DefaultLocale>de-DE</DefaultLocale>
   <DisplayName DefaultValue="Linde Dokumentenvorlagen"/>
   <Description DefaultValue="Legt die Linde-Vorlagen an: Brief, Protokoll, Prozess, Prozess-Steckbrief, QMS-Hilfsmittel"/>
   <IconUrl DefaultValue="https://nicolatrava.github.io/BZ-Linde-Add-In/icon32.png"/>
   <HighResolutionIconUrl DefaultValue="https://nicolatrava.github.io/BZ-Linde-Add-In/icon80.png"/>
-  <SupportUrl DefaultValue="https://nicolatrava.github.io/BZ-Linde-Add-In/taskpane.html?v=6"/>
+  <SupportUrl DefaultValue="https://nicolatrava.github.io/BZ-Linde-Add-In/taskpane.html?v=7"/>
   <AppDomains>
     <AppDomain>https://nicolatrava.github.io</AppDomain>
   </AppDomains>
@@ -20,7 +20,7 @@
     <Host Name="Document"/>
   </Hosts>
   <DefaultSettings>
-    <SourceLocation DefaultValue="https://nicolatrava.github.io/BZ-Linde-Add-In/taskpane.html?v=6"/>
+    <SourceLocation DefaultValue="https://nicolatrava.github.io/BZ-Linde-Add-In/taskpane.html?v=7"/>
   </DefaultSettings>
   <Permissions>ReadWriteDocument</Permissions>
   <VersionOverrides xmlns="http://schemas.microsoft.com/office/taskpaneappversionoverrides" xsi:type="VersionOverridesV1_0">
@@ -65,7 +65,7 @@
         <bt:Image id="Icon80" DefaultValue="https://nicolatrava.github.io/BZ-Linde-Add-In/icon80.png"/>
       </bt:Images>
       <bt:Urls>
-        <bt:Url id="TaskpaneUrl" DefaultValue="https://nicolatrava.github.io/BZ-Linde-Add-In/taskpane.html?v=6"/>
+        <bt:Url id="TaskpaneUrl" DefaultValue="https://nicolatrava.github.io/BZ-Linde-Add-In/taskpane.html?v=7"/>
       </bt:Urls>
       <bt:ShortStrings>
         <bt:String id="GroupLabel" DefaultValue="Linde Vorlagen"/>
