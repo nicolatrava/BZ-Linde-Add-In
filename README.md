@@ -124,13 +124,22 @@ Die häufigsten Anpassungen stehen alle zuoberst in
 Nach jeder Änderung neu bauen und die Build-Nummer erhöhen:
 
 ```bash
-echo 6 > BUILD          # Build-Nummer hochzählen
+echo 8 > BUILD          # Build-Nummer hochzählen
 python3 build.py        # erzeugt taskpane.html
 node tools/test.js      # Bedienlogik und OOXML prüfen
+python3 tools/check-vorlagen.py
 ```
 
-Ausserdem in `manifest.xml` die `?v=`-Nummer der drei URLs und die `<Version>`
-erhöhen, damit Word die neue Fassung lädt und nicht die zwischengespeicherte.
+**Das `manifest.xml` bleibt dabei unangetastet.** Es liegt nach dem einmaligen
+Hochladen im Microsoft-365-Mandanten, nicht auf GitHub – Word holt von hier nur
+`taskpane.html`, `vorlagen/` und die Icons. Änderungen an Oberfläche, Feldern
+oder Vorlagen erreichen die Nutzenden also allein über einen Push, ohne dass
+jemand etwas neu einspielen muss. Beim BWH-Add-In steht das Manifest seit
+`?v=22` still, während das Taskpane bei Build 46 ist.
+
+Ein neues Manifest braucht es nur, wenn sich etwas ändert, das *im* Manifest
+steht: Name oder Symbol im Menüband, Berechtigungen, die Adresse des Hostings.
+Die Build-Nummer unten im Taskpane zeigt, welcher Stand geladen ist.
 
 ### Ausrollen
 
