@@ -101,8 +101,15 @@ sie an, bricht das Skript ab.
 
 ```bash
 python3 tools/clean-vorlagen.py /pfad/zu/den/originalen
+node tools/dump-kopffuss.js /tmp/kopffuss          # moderne Kopf-/Fusszeile ausleiten
+python3 tools/modernisiere-qms.py /tmp/kopffuss    # nur die QMS-Vorlage umziehen
 python3 tools/check-vorlagen.py     # Platzhalter gegen die Felder im Add-In
 ```
+
+Die QMS-Hilfsmittel-Vorlage bekommt dabei – auf Wunsch der Linde als einzige –
+den modernen Kopf und Fuss aus `Muster_Dokument_A4_hoch.docx`; die Bausteine
+stammen aus denselben Funktionen wie der Zweig «Nur Kopf- und Fusszeile». Die
+übrigen vier Vorlagen behalten ihr bisheriges Erscheinungsbild.
 
 `tools/check-vorlagen.py` vergleicht beide Richtungen: ein `{{...}}` ohne
 Eingabefeld bliebe im fertigen Dokument stehen, ein Eingabefeld ohne
@@ -177,6 +184,8 @@ vorlagen/*.docx                 die fünf Hausvorlagen, bereinigt
 tools/test.js                   Schnelltest ohne Word
 tools/preview.js                erzeugt Beispiel-Dokumente als .docx
 tools/clean-vorlagen.py         macht aus ausgefüllten Originalen leere Vorlagen
+tools/dump-kopffuss.js          leitet die moderne Kopf-/Fusszeile aus taskpane.html ab
+tools/modernisiere-qms.py       zieht die QMS-Vorlage auf den modernen Kopf/Fuss um
 tools/check-vorlagen.py         Platzhalter gegen die Felder im Add-In prüfen
 Muster_Dokument_A4_hoch.docx    Ausgangsvorlage für Kopf-/Fusszeile
 ```
