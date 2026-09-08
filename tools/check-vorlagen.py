@@ -42,8 +42,9 @@ except Exception:  # Modulname mit Bindestrich laesst sich nicht importieren
     ]
 
 PLATZHALTER = re.compile(r"\{\{([A-ZÄÖÜ_]+)\}\}")
-# {{DATUM}} setzt das Add-In immer selbst, dafuer gibt es kein Eingabefeld.
-AUTOMATISCH = {"DATUM"}
+# Setzt das Add-In selbst, dafuer gibt es kein Eingabefeld: das Datum und die
+# Grussanrede des Briefs (aus Anrede und Name).
+AUTOMATISCH = {"DATUM", "BRIEFANREDE"}
 
 
 def platzhalter_in_docx(pfad: pathlib.Path) -> set:

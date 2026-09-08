@@ -116,5 +116,34 @@ const hdrLeer = S.mkHdrPkg(false, true, '', '');
 t('Kopfzeile leer: Platzhalter Prozessname', hdrLeer.indexOf('Prozessname') > 0, true);
 t('Kopfzeile leer: Platzhalter Ablageort', hdrLeer.indexOf('Ablageort') > 0, true);
 t('Extern: auch ohne Platzhalter', S.mkHdrPkg(false, false, '', '').indexOf('Prozessname'), -1);
+
+/* ── Brief: Grussanrede aus Anrede und Name ───────────────────────────────── */
+t('Anrede Frau', S.briefAnrede('Frau', 'Maria Muster'), 'Sehr geehrte Frau Muster');
+t('Anrede Herr', S.briefAnrede('herr', 'Hans Peter Meier'), 'Sehr geehrter Herr Meier');
+t('Anrede ohne Geschlecht', S.briefAnrede('', 'Maria Muster'), 'Guten Tag Maria Muster');
+t('Anrede Firma', S.briefAnrede('Firma', 'Muster AG'), 'Guten Tag Muster AG');
+t('Anrede ohne Name', S.briefAnrede('Frau', ''), 'Sehr geehrte Damen und Herren');
+t('Anrede leer', S.briefAnrede(undefined, undefined), 'Sehr geehrte Damen und Herren');
+
+/* ── Gemerkte Felder: Absender, E-Mail, Protokollführung ─────────────────── */
+(function () {
+  const speicher = {};
+  S.localStorage.getItem = (k) => (k in speicher ? speicher[k] : null);
+  S.localStorage.setItem = (k, v) => { speicher[k] = v; };
+  const brief = S.VORLAGEN.filter((v) => v.id === 'brief')[0];
+  S.merkeFelder(brief, { ABSENDER: 'Nina Test, Leitung', EMAIL: 'nina.test@bz-linde.ch',
+                         BETREFF: 'darf nicht gemerkt werden' });
+  const g = S.gemerkteFelder();
+  t('gemerkt: Absender', g.ABSENDER, 'Nina Test, Leitung');
+  t('gemerkt: E-Mail', g.EMAIL, 'nina.test@bz-linde.ch');
+  t('nicht gemerkt: Betreff', g.BETREFF, undefined);
+  S.vorlage = brief;
+  S.buildFelder();
+  t('vorbelegt: E-Mail im Formular', el('felder').innerHTML.indexOf('value="nina.test@bz-linde.ch"') > 0, true);
+  t('vorbelegt: Betreff leer', el('felder').innerHTML.indexOf('id="ph-BETREFF" placeholder="Worum es im Brief geht" value=""') > 0, true);
+  S.localStorage.getItem = () => null;
+  S.localStorage.setItem = () => {};
+})();
+
 console.log(failed ? '\n' + failed + ' Test(s) fehlgeschlagen' : '\nalle Tests ok');
 process.exitCode = failed ? 1 : 0;

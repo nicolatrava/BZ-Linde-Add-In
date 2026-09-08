@@ -11,8 +11,8 @@ Aufbau und Bedienung folgen dem BWH-Add-In
 
 | Vorlage | Inhalt |
 |---|---|
-| Brief | Empfängeradresse, Betreff, Grussformel |
-| Protokoll | Traktandenliste, Pendenzen, Verteiler |
+| Brief | Logo, Empfängeradresse, Betreff, Grussformel mit Anrede und E-Mail |
+| Protokoll | Traktandenliste, Pendenzen, Verteiler, Protokollführung |
 | Prozess | Ablauftabelle: Grafik · Tätigkeit · Wer · Hilfsmittel |
 | Prozess-Steckbrief | Ziel, Input/Output, Messgrössen, Chancen und Risiken |
 | QMS-Hilfsmittel | Richtlinie oder Merkblatt: Ziel, Grundsätze, Vorgehen, Hinweise |
@@ -20,7 +20,11 @@ Aufbau und Bedienung folgen dem BWH-Add-In
 
 **Schritt 2 – Angaben.** Je nach Vorlage Prozessgruppe, Prozess-Nr.,
 Prozessname, Bereich, Dokumentart oder Titel. Was leer bleibt, bleibt als
-Platzhalter im Dokument stehen. Das Datum setzt das Add-In immer selbst.
+Platzhalter im Dokument stehen. Das Datum setzt das Add-In immer selbst,
+beim Brief auch die Grussanrede («Sehr geehrte Frau Muster» aus Anrede und
+Name). Absender, E-Mail und Protokollführung merkt sich das Add-In auf dem
+Gerät (`localStorage`, Schlüssel `lindeFelder`) und trägt sie beim nächsten
+Mal von selbst ein.
 
 Die fünf Vorlagen werden **nicht nachgebaut**: unter `vorlagen/` liegen die
 Original-.docx der Linde, das Add-In holt die gewählte Datei und legt sie mit
@@ -103,6 +107,7 @@ sie an, bricht das Skript ab.
 python3 tools/clean-vorlagen.py /pfad/zu/den/originalen
 node tools/dump-kopffuss.js /tmp/kopffuss          # moderne Kopf-/Fusszeile ausleiten
 python3 tools/modernisiere-qms.py /tmp/kopffuss    # nur die QMS-Vorlage umziehen
+python3 tools/feedback-anpassungen.py              # Rückmeldungen der Linde einarbeiten
 python3 tools/check-vorlagen.py     # Platzhalter gegen die Felder im Add-In
 ```
 
@@ -110,6 +115,16 @@ Die QMS-Hilfsmittel-Vorlage bekommt dabei – auf Wunsch der Linde als einzige �
 den modernen Kopf und Fuss aus `Muster_Dokument_A4_hoch.docx`; die Bausteine
 stammen aus denselben Funktionen wie der Zweig «Nur Kopf- und Fusszeile». Die
 übrigen vier Vorlagen behalten ihr bisheriges Erscheinungsbild.
+
+`tools/feedback-anpassungen.py` setzt die Rückmeldungen aus der Prüfung im
+September 2026 um (Brief: Logo, Adressblock, Aptos 11/12, Grussformel mit
+E-Mail, Adress-Fusszeile · Protokoll: Abstände, Traktanden-Zellen,
+Protokollführung, Felder der Fremdvorlage aufgelöst · Prozess: Logo in der
+Kopfzeile · Steckbrief: grauer Balken 11 Punkt). Es arbeitet auf den bereits
+bereinigten Dateien, erkennt angepasste Vorlagen und lässt sich darum
+beliebig oft laufen lassen. Alle vier nutzen dasselbe Logo
+`assets/logo-linde.jpg` – aus dem 1-MB-CMYK-Original der Protokoll-Vorlage
+über sein ICC-Profil farbtreu nach sRGB gewandelt, 57 KB.
 
 `tools/check-vorlagen.py` vergleicht beide Richtungen: ein `{{...}}` ohne
 Eingabefeld bliebe im fertigen Dokument stehen, ein Eingabefeld ohne
@@ -178,7 +193,8 @@ taskpane.html                   ausgeliefertes Add-In (erzeugt – nicht direkt 
 src/taskpane.template.html      Quelle: Bedienoberfläche und OOXML-Erzeugung
 build.py                        baut taskpane.html aus src/ und assets/
 BUILD                           Build-Nummer, erscheint unten im Taskpane
-assets/logo-dok.png             Logo, freigestellt aus der Muster-Vorlage
+assets/logo-dok.png             Logo, freigestellt aus der Muster-Vorlage (Kopfzeile des Add-Ins)
+assets/logo-linde.jpg           Logo der Hausvorlagen (Brief, Protokoll, Prozess, Steckbrief)
 icon16/32/80.png                Symbole für das Menüband
 vorlagen/*.docx                 die fünf Hausvorlagen, bereinigt
 tools/test.js                   Schnelltest ohne Word
@@ -186,6 +202,7 @@ tools/preview.js                erzeugt Beispiel-Dokumente als .docx
 tools/clean-vorlagen.py         macht aus ausgefüllten Originalen leere Vorlagen
 tools/dump-kopffuss.js          leitet die moderne Kopf-/Fusszeile aus taskpane.html ab
 tools/modernisiere-qms.py       zieht die QMS-Vorlage auf den modernen Kopf/Fuss um
+tools/feedback-anpassungen.py   arbeitet die Rückmeldungen der Linde in die Vorlagen ein
 tools/check-vorlagen.py         Platzhalter gegen die Felder im Add-In prüfen
 Muster_Dokument_A4_hoch.docx    Ausgangsvorlage für Kopf-/Fusszeile
 ```

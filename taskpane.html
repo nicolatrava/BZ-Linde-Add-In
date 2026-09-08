@@ -231,7 +231,7 @@ details.adr[open]>summary:before{content:'\25BE '}
   <button class="btn" id="applyBtn" onclick="apply()">Auf Dokument anwenden</button>
   <div class="warn hidden" id="ersetzt-warn">Ersetzt den gesamten Inhalt des Dokuments.</div>
   <div class="status" id="status"></div>
-  <div class="build">Build 8</div>
+  <div class="build">Build 9</div>
 </div>
 
 <script>
@@ -270,20 +270,24 @@ var ORG_DEFAULT = {
    Einfuegen durch die Eingaben ersetzt; {{DATUM}} immer durch das Tagesdatum.
    ═══════════════════════════════════════════════════════════════════════════ */
 var VORLAGEN = [
+  /* merken: der Wert bleibt auf diesem Gerät gespeichert und ist beim
+     nächsten Brief schon eingetragen (Absender, E-Mail, Protokollführung). */
   { id:'brief', datei:'vorlagen/brief.docx', name:'Brief',
-    info:'Empfängeradresse, Betreff, Grussformel',
+    info:'Logo, Empfängeradresse, Betreff, Grussformel mit Anrede und E-Mail',
     felder:[
-      {ph:'ANREDE',     label:'Anrede',        hint:'z.B. Frau'},
+      {ph:'ANREDE',     label:'Anrede',        hint:'Frau oder Herr'},
       {ph:'EMPFAENGER', label:'Vorname Name',  hint:'z.B. Maria Muster'},
       {ph:'STRASSE',    label:'Strasse Nr.',   hint:'z.B. Dorfstrasse 12'},
       {ph:'PLZORT',     label:'PLZ Ort',       hint:'z.B. 6022 Grosswangen'},
       {ph:'BETREFF',    label:'Betreff',       hint:'Worum es im Brief geht'},
-      {ph:'ABSENDER',   label:'Absender',      hint:'Vorname, Name, Bezeichnung/Abteilung'}
+      {ph:'ABSENDER',   label:'Absender',      hint:'Vorname Name, Funktion', merken:true},
+      {ph:'EMAIL',      label:'E-Mail',        hint:'vorname.name@bz-linde.ch', merken:true}
     ] },
   { id:'protokoll', datei:'vorlagen/protokoll.docx', name:'Protokoll',
     info:'Traktandenliste, Pendenzen, Verteiler',
     felder:[
-      {ph:'BETREFF', label:'Betreff', hint:'z.B. Teamsitzung Pflege'}
+      {ph:'BETREFF',           label:'Betreff',           hint:'z.B. Teamsitzung Pflege'},
+      {ph:'PROTOKOLLFUEHRUNG', label:'Protokollführung',  hint:'Vorname Name', merken:true}
     ] },
   { id:'prozess', datei:'vorlagen/prozess.docx', name:'Prozess',
     info:'Ablauftabelle: Grafik · Tätigkeit · Wer · Hilfsmittel',
@@ -347,13 +351,29 @@ function buildFelder(){
     step.className = 'step hidden'; sep.className = 'sep hidden'; host.innerHTML = '';
     return;
   }
+  var gemerkt = gemerkteFelder();
   var h = '';
   for(var i=0;i<f.length;i++){
+    var wert = f[i].merken ? (gemerkt[f[i].ph] || '') : '';
     h += '<div class="field"><label>'+f[i].label+'</label>' +
-         '<input type="text" id="ph-'+f[i].ph+'" placeholder="'+f[i].hint+'"/></div>';
+         '<input type="text" id="ph-'+f[i].ph+'" placeholder="'+f[i].hint+'"' +
+         ' value="'+esc(wert)+'"/></div>';
   }
   host.innerHTML = h;
   step.className = 'step'; sep.className = 'sep';
+}
+
+/* Gemerkte Feldwerte (Absender, E-Mail, Protokollführung) dieses Geräts. */
+function gemerkteFelder(){
+  try{ return JSON.parse(localStorage.getItem('lindeFelder') || '{}') || {}; }
+  catch(e){ return {}; }
+}
+function merkeFelder(v, werte){
+  var g = gemerkteFelder();
+  (v.felder || []).forEach(function(f){
+    if(f.merken && werte[f.ph] !== undefined) g[f.ph] = werte[f.ph];
+  });
+  try{ localStorage.setItem('lindeFelder', JSON.stringify(g)); }catch(e){}
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -907,6 +927,20 @@ function heuteAusgeschrieben(){
   return d.getDate() + '. ' + MONATE[d.getMonth()] + ' ' + d.getFullYear();
 }
 
+/* Grussanrede des Briefs aus Anrede und Name: «Sehr geehrte Frau Muster».
+   Der Nachname ist das letzte Wort; ohne passende Anrede wird es ein
+   neutrales «Guten Tag Maria Muster», ohne Name «Sehr geehrte Damen und Herren». */
+function briefAnrede(anrede, name){
+  anrede = (anrede || '').trim();
+  name   = (name   || '').trim();
+  var teile = name.split(/\s+/).filter(Boolean);
+  var nachname = teile.length ? teile[teile.length - 1] : '';
+  if(nachname && /^frau$/i.test(anrede)) return 'Sehr geehrte Frau ' + nachname;
+  if(nachname && /^herr$/i.test(anrede)) return 'Sehr geehrter Herr ' + nachname;
+  if(name) return 'Guten Tag ' + name;
+  return 'Sehr geehrte Damen und Herren';
+}
+
 /* Platzhalter im Rumpf und in allen Kopf-/Fusszeilen ersetzen. */
 function fuellePlatzhalter(ctx, werte){
   var schluessel = Object.keys(werte);
@@ -948,6 +982,8 @@ function wendeVorlageAn(v, btn){
     var wert = el ? el.value.trim() : '';
     if(wert) werte[f.ph] = wert;      /* leer lassen heisst: Platzhalter bleibt */
   });
+  if(v.id === 'brief') werte.BRIEFANREDE = briefAnrede(werte.ANREDE, werte.EMPFAENGER);
+  merkeFelder(v, werte);
 
   var kannGanzes = false;
   try{ kannGanzes = Office.context.requirements.isSetSupported('WordApi','1.5'); }catch(e){}
