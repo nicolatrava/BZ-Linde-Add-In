@@ -145,5 +145,20 @@ t('Anrede leer', S.briefAnrede(undefined, undefined), 'Sehr geehrte Damen und He
   S.localStorage.setItem = () => {};
 })();
 
+/* ── Import-Optionen: Formatvorlagen und Abstände aus der Vorlage ─────────── */
+t('Import-Optionen ohne WordApi 1.5', S.insertOptionen(), null);
+S.Office.context.requirements.isSetSupported = (n, v) => n === 'WordApi' && parseFloat(v) <= 1.5;
+(function () {
+  const o = S.insertOptionen();
+  t('Import-Optionen: Formatvorlagen', o && o.importStyles, true);
+  t('Import-Optionen: Absatzabstände', o && o.importParagraphSpacing, true);
+  t('Import-Optionen: Design', o && o.importTheme, true);
+  t('Import-Optionen: Änderungsverfolgung bleibt', o && o.importChangeTrackingMode, false);
+  t('Import-Optionen: 1.7-Schalter fehlt bei 1.5', o && o.importDifferentOddEvenPages, undefined);
+})();
+S.Office.context.requirements.isSetSupported = (n, v) => n === 'WordApi' && parseFloat(v) <= 1.7;
+t('Import-Optionen: gerade/ungerade Seiten ab 1.7', S.insertOptionen().importDifferentOddEvenPages, true);
+S.Office.context.requirements.isSetSupported = () => false;
+
 console.log(failed ? '\n' + failed + ' Test(s) fehlgeschlagen' : '\nalle Tests ok');
 process.exitCode = failed ? 1 : 0;

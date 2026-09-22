@@ -38,6 +38,18 @@ Add-In die Platzhalter `{{...}}` in Rumpf, Kopf- und Fusszeilen.
 Word braucht dafür WordApi 1.5. Ältere Versionen bekommen nur den Rumpf
 eingesetzt; das Add-In sagt das im Statustext.
 
+Beim Einsetzen übergibt das Add-In Import-Optionen (`importStyles`,
+`importParagraphSpacing`, `importTheme`): Formatvorlagen, Absatzabstände und
+Design kommen aus der Vorlage. Ohne diese Optionen legt Word die Vorlagen des
+Zieldokuments darüber – ein frisches Word-Dokument bringt «Standard» mit
+8 pt Abstand nach und Zeilenabstand 1.16 sowie eine blaue «Überschrift 1»
+mit, und genau so sah der erste Brief bei der Linde aus. Schlägt der Aufruf
+mit Optionen fehl, versucht es das Add-In ohne, danach nur mit dem Rumpf.
+Der Brief ist zusätzlich gegen dieses Verhalten gebaut: Er verwendet eigene
+Formatvorlagen «Linde Brief», «Linde Betreff», «Linde Kopfzeile» und
+«Linde Fusszeile», die kein Zieldokument kennt und Word darum unverändert
+mitnimmt.
+
 ### Nur Kopf- und Fusszeile
 
 | Schritt | Auswahl |
@@ -117,8 +129,9 @@ stammen aus denselben Funktionen wie der Zweig «Nur Kopf- und Fusszeile». Die
 übrigen vier Vorlagen behalten ihr bisheriges Erscheinungsbild.
 
 `tools/feedback-anpassungen.py` setzt die Rückmeldungen aus der Prüfung im
-September 2026 um (Brief: Logo, Adressblock, Aptos 11/12, Grussformel mit
-E-Mail, Adress-Fusszeile · Protokoll: Abstände, Traktanden-Zellen,
+September 2026 um (Brief: Logo mittig, Adressblock und Leerzeilen wie das
+freigegebene Muster, Aptos 11/12 schwarz über eigene Linde-Formatvorlagen,
+Grussformel mit E-Mail, Adress-Fusszeile · Protokoll: Abstände, Traktanden-Zellen,
 Protokollführung, Felder der Fremdvorlage aufgelöst · Prozess: Logo in der
 Kopfzeile · Steckbrief: grauer Balken 11 Punkt). Es arbeitet auf den bereits
 bereinigten Dateien, erkennt angepasste Vorlagen und lässt sich darum

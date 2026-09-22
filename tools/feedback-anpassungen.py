@@ -9,9 +9,12 @@ Vorlage wird erkannt und uebersprungen. Die QMS-Hilfsmittel-Vorlage bleibt
 unveraendert - sie war laut Rueckmeldung "sehr gut".
 
 Brief
-  * Logo oben wie im Protokoll (eigene Kopfzeile), Adressblock direkt darunter
+  * Logo oben mittig (eigene Kopfzeile), Adressblock darunter - Aufbau und
+    Leerzeilen wie in Isabellas freigegebenem Muster (Brief Test3)
   * ohne Absatzabstaende, alles auf einer linken Fluchtlinie, Aptos 11,
-    Betreff 12 fett, keine Farben
+    Betreff 12 fett, alles schwarz - ueber eigene Formatvorlagen "Linde
+    Brief/Betreff/Kopfzeile/Fusszeile", damit Word beim Einsetzen nicht die
+    Standard-Vorlagen des Zieldokuments darueberlegt
   * Grussformel mit {{BRIEFANREDE}} (setzt das Add-In aus Anrede und Name),
     Unterschrift mit {{ABSENDER}} und {{EMAIL}}, weniger Leerraum davor
   * Fusszeile: Betagtenzentrum Linde | Dorfstrasse 6e | 6022 Grosswangen |
@@ -120,22 +123,23 @@ def content_types(teile, override=None, jpeg=True):
 
 # ─── OOXML-Bausteine ────────────────────────────────────────────────────────
 
-def rpr(fett=False, sz=22):
+def rpr(fett=False, sz=22, farbe=None):
     return ('<w:rPr>' + APTOS + ('<w:b/><w:bCs/>' if fett else '') +
+            ('<w:color w:val="%s"/>' % farbe if farbe else '') +
             '<w:sz w:val="%d"/><w:szCs w:val="%d"/></w:rPr>' % (sz, sz))
 
 
-def absatz(inhalt="", fett=False, sz=22, ind=0, stil=None, jc=None):
+def absatz(inhalt="", fett=False, sz=22, ind=0, stil=None, jc=None, farbe=None):
     """Ein Absatz ohne Abstaende; inhalt ist Text oder fertige Laeufe."""
     ppr = ('<w:pPr>' + ('<w:pStyle w:val="%s"/>' % stil if stil else '') +
            '<w:spacing w:before="0" w:after="0" w:line="240" w:lineRule="auto"/>' +
            ('<w:ind w:left="%d"/>' % ind if ind else '') +
            ('<w:jc w:val="%s"/>' % jc if jc else '') +
-           rpr(fett, sz) + '</w:pPr>')
+           rpr(fett, sz, farbe) + '</w:pPr>')
     if inhalt.startswith("<w:r"):
         laeufe = inhalt
     elif inhalt:
-        laeufe = '<w:r>%s<w:t xml:space="preserve">%s</w:t></w:r>' % (rpr(fett, sz), inhalt)
+        laeufe = '<w:r>%s<w:t xml:space="preserve">%s</w:t></w:r>' % (rpr(fett, sz, farbe), inhalt)
     else:
         laeufe = ""
     return "<w:p>" + ppr + laeufe + "</w:p>"
@@ -178,7 +182,33 @@ def logo_schwebend(rid, cy):
 
 
 LOGO_CY_GROSS = 1213215      # 3.37 cm - wie bisher im Protokoll
+LOGO_CY_BRIEF = 1155960      # 3.2 cm, mittig - wie in Isabellas Muster (Brief Test3)
 LOGO_CY_PROZESS = 720000     # 2.0 cm
+SCHWARZ = "000000"
+
+# Eigene Formatvorlagen fuer den Brief. Word ersetzt beim Einsetzen einer
+# Datei die Formatvorlagen gleichen Namens (Standard, Ueberschrift 1, Kopf-
+# und Fusszeile) durch die des Zieldokuments - so kamen dessen 8 pt Absatz-
+# abstand, der 1.16-fache Zeilenabstand und das Blau von Ueberschrift 1 in
+# den Brief. Unbekannte Formatvorlagen nimmt Word dagegen mit.
+LINDE_STYLES = (
+    '<w:style w:type="paragraph" w:customStyle="1" w:styleId="LindeBrief">'
+    '<w:name w:val="Linde Brief"/><w:basedOn w:val="Standard"/><w:qFormat/>'
+    '<w:pPr><w:spacing w:before="0" w:after="0" w:line="240" w:lineRule="auto"/></w:pPr>'
+    '<w:rPr>' + APTOS + '<w:color w:val="000000"/><w:sz w:val="22"/><w:szCs w:val="22"/>'
+    '</w:rPr></w:style>'
+    '<w:style w:type="paragraph" w:customStyle="1" w:styleId="LindeBetreff">'
+    '<w:name w:val="Linde Betreff"/><w:basedOn w:val="LindeBrief"/>'
+    '<w:next w:val="LindeBrief"/><w:qFormat/>'
+    '<w:rPr><w:b/><w:bCs/><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr></w:style>'
+    '<w:style w:type="paragraph" w:customStyle="1" w:styleId="LindeKopf">'
+    '<w:name w:val="Linde Kopfzeile"/><w:basedOn w:val="LindeBrief"/>'
+    '<w:pPr><w:jc w:val="center"/></w:pPr></w:style>'
+    '<w:style w:type="paragraph" w:customStyle="1" w:styleId="LindeFuss">'
+    '<w:name w:val="Linde Fusszeile"/><w:basedOn w:val="LindeBrief"/>'
+    '<w:pPr><w:jc w:val="center"/></w:pPr>'
+    '<w:rPr><w:sz w:val="16"/><w:szCs w:val="16"/></w:rPr></w:style>'
+)
 
 
 # ─── Felder der Fremdvorlage ────────────────────────────────────────────────
@@ -269,65 +299,71 @@ def logo_descr_bereinigen(xml):
 # ─── Brief ──────────────────────────────────────────────────────────────────
 
 def brief(hdr_tag):
+    """Rumpf, Kopf, Fuss und Formatvorlagen werden jedes Mal neu aufgebaut;
+    geschrieben wird nur, wenn sich dabei etwas aendert."""
     pfad = VORLAGEN / "brief.docx"
     teile, infos = lesen(pfad)
-    if "word/header1.xml" in teile:
-        print("brief.docx: bereits angepasst")
-        return
+    vorher = dict(teile)
 
     doc = text(teile, "word/document.xml")
     kopf = doc[:doc.find("<w:body>")]
     sect = re.search(r"<w:sectPr\b.*?</w:sectPr>", doc, re.S).group(0)
     sect = re.sub(r"<w:sectPr\b[^>]*>", "<w:sectPr>", sect)
-    sect = re.sub(r"<w:footerReference\b",
-                  '<w:headerReference w:type="default" r:id="rIdHdrLogo"/><w:footerReference',
-                  sect, count=1)
+    if "rIdHdrLogo" not in sect:
+        sect = re.sub(r"<w:footerReference\b",
+                      '<w:headerReference w:type="default" r:id="rIdHdrLogo"/><w:footerReference',
+                      sect, count=1)
     sect = re.sub(r"<w:pgMar[^>]*/>",
                   '<w:pgMar w:top="2943" w:right="1418" w:bottom="1134" w:left="1418" '
                   'w:header="567" w:footer="567" w:gutter="0"/>', sect)
 
     ADR = 5040                                  # Adressfeld rechts, wie bisher
+
+    def z(inhalt="", **kw):
+        return absatz(inhalt, stil="LindeBrief", farbe=SCHWARZ, **kw)
+
+    # Aufbau und Leerzeilen genau wie in Isabellas freigegebenem Muster.
     rumpf = "".join([
-        absatz("{{ANREDE}}", ind=ADR),
-        absatz("{{EMPFAENGER}}", ind=ADR),
-        absatz("{{STRASSE}}", ind=ADR),
-        absatz("{{PLZORT}}", ind=ADR),
-        absatz(), absatz(),
-        absatz("Grosswangen, {{DATUM}}", ind=ADR),
-        absatz(), absatz(),
-        absatz("Betreff: {{BETREFF}}", fett=True, sz=24, stil="berschrift1"),
-        absatz(),
-        absatz("{{BRIEFANREDE}}"),
-        absatz(),
-        absatz("Text"),
-        absatz(), absatz(),
-        absatz("Freundliche Grüsse"),
-        absatz("Betagtenzentrum Linde", fett=True),
-        absatz(), absatz(),
-        absatz("{{ABSENDER}}"),
-        absatz("{{EMAIL}}"),
+        z("", ind=ADR),
+        z("{{ANREDE}}", ind=ADR),
+        z("{{EMPFAENGER}}", ind=ADR),
+        z("{{STRASSE}}", ind=ADR),
+        z("{{PLZORT}}", ind=ADR),
+        z(), z(), z(),
+        z("Grosswangen, {{DATUM}}", ind=ADR),
+        z(), z(),
+        absatz("Betreff: {{BETREFF}}", fett=True, sz=24, stil="LindeBetreff", farbe=SCHWARZ),
+        z(),
+        z("{{BRIEFANREDE}}"),
+        z(),
+        z("Text"),
+        z(), z(),
+        z("Freundliche Grüsse"),
+        z("Betagtenzentrum Linde", fett=True),
+        z(), z(),
+        z("{{ABSENDER}}"),
+        z("{{EMAIL}}"),
     ])
     setze(teile, "word/document.xml",
           kopf + "<w:body>" + rumpf + sect + "</w:body></w:document>")
 
-    # Formatvorlagen: Standard Aptos 11, Ueberschrift 1 ohne Einzug in 12.
+    # Formatvorlagen: die Linde-Vorlagen frisch einsetzen, Standard auf
+    # Aptos 11, Ueberschrift 1 ohne den alten Einzug.
     st = text(teile, "word/styles.xml")
-    st, n1 = re.subn(
+    st = re.sub(r'<w:style w:type="paragraph" w:customStyle="1" w:styleId="Linde\w+">.*?</w:style>',
+                "", st, flags=re.S)
+    st = st.replace("</w:styles>", LINDE_STYLES + "</w:styles>")
+    st = re.sub(
         r'(<w:style w:type="paragraph" w:default="1" w:styleId="Standard">.*?)<w:rPr>.*?</w:rPr>',
         r'\1<w:rPr>' + APTOS + '<w:sz w:val="22"/><w:szCs w:val="22"/>'
         '<w:lang w:eastAsia="de-DE"/></w:rPr>', st, count=1, flags=re.S)
-    st, n2 = re.subn(
-        r'(<w:style w:type="paragraph" w:styleId="berschrift1">.*?)<w:ind w:left="540"/>(.*?)'
-        r'<w:rPr><w:b/><w:bCs/></w:rPr>',
-        r'\1\2<w:rPr><w:b/><w:bCs/><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr>',
-        st, count=1, flags=re.S)
-    if n1 != 1 or n2 != 1:
-        raise SystemExit("brief: Formatvorlagen Standard/berschrift1 nicht wie erwartet")
+    st = re.sub(r'(<w:style w:type="paragraph" w:styleId="berschrift1">.*?)<w:ind w:left="540"/>',
+                r"\1", st, count=1, flags=re.S)
     setze(teile, "word/styles.xml", st)
 
-    # Kopfzeile mit Logo, Fusszeile mit Adresszeile.
+    # Kopfzeile mit mittigem Logo, Fusszeile mit Adresszeile.
     setze(teile, "word/header1.xml",
-          DECL + hdr_tag + absatz(logo_inline("rIdLogo", LOGO_CY_GROSS), stil="Kopfzeile")
+          DECL + hdr_tag + absatz(logo_inline("rIdLogo", LOGO_CY_BRIEF), stil="LindeKopf", jc="center")
           + "</w:hdr>")
     rels_ergaenzen(teile, "word/_rels/header1.xml.rels", "rIdLogo", REL_IMG, "media/image1.jpeg")
     teile["word/media/image1.jpeg"] = LOGO.read_bytes()
@@ -336,11 +372,14 @@ def brief(hdr_tag):
 
     ftr = text(teile, "word/footer1.xml")
     setze(teile, "word/footer1.xml",
-          DECL + wurzel_tag(ftr) + absatz(FUSSZEILE_BRIEF, sz=16, stil="Fuzeile", jc="center")
-          + "</w:ftr>")
+          DECL + wurzel_tag(ftr) +
+          absatz(FUSSZEILE_BRIEF, sz=16, stil="LindeFuss", jc="center", farbe=SCHWARZ) + "</w:ftr>")
 
+    if all(teile.get(k) == vorher.get(k) for k in set(teile) | set(vorher)):
+        print("brief.docx: bereits angepasst")
+        return
     schreiben(pfad, teile, infos)
-    print("brief.docx: Logo-Kopfzeile, Layout, Grussformel, Fusszeile")
+    print("brief.docx: Logo mittig, Linde-Formatvorlagen, Layout wie Muster, Fusszeile")
 
 
 # ─── Protokoll ──────────────────────────────────────────────────────────────

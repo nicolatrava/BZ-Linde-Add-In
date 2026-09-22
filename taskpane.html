@@ -231,7 +231,7 @@ details.adr[open]>summary:before{content:'\25BE '}
   <button class="btn" id="applyBtn" onclick="apply()">Auf Dokument anwenden</button>
   <div class="warn hidden" id="ersetzt-warn">Ersetzt den gesamten Inhalt des Dokuments.</div>
   <div class="status" id="status"></div>
-  <div class="build">Build 9</div>
+  <div class="build">Build 10</div>
 </div>
 
 <script>
@@ -941,6 +941,22 @@ function briefAnrede(anrede, name){
   return 'Sehr geehrte Damen und Herren';
 }
 
+/* Import-Optionen fürs Einsetzen (ab WordApi 1.5): Formatvorlagen,
+   Absatzabstände und Design kommen aus der Vorlage, nicht aus dem
+   Zieldokument. Sonst legt Word dessen «Standard» (8 pt Abstand nach,
+   Zeilenabstand 1.16) und «Überschrift 1» (blau) über die Vorlage – so sah
+   der erste Brief bei der Linde aus. */
+function insertOptionen(){
+  function kann(v){
+    try{ return Office.context.requirements.isSetSupported('WordApi', v); }catch(e){ return false; }
+  }
+  if(!kann('1.5')) return null;
+  var o = { importTheme:true, importStyles:true, importParagraphSpacing:true,
+            importPageColor:true, importChangeTrackingMode:false };
+  if(kann('1.7')) o.importDifferentOddEvenPages = true;
+  return o;
+}
+
 /* Platzhalter im Rumpf und in allen Kopf-/Fusszeilen ersetzen. */
 function fuellePlatzhalter(ctx, werte){
   var schluessel = Object.keys(werte);
@@ -987,14 +1003,17 @@ function wendeVorlageAn(v, btn){
 
   var kannGanzes = false;
   try{ kannGanzes = Office.context.requirements.isSetSupported('WordApi','1.5'); }catch(e){}
+  var optionen = insertOptionen();
 
   /* Einmal einsetzen. ganz=true nimmt Kopf- und Fusszeile mit, ganz=false
-     nur den Rumpf. Ein fehlgeschlagener Aufruf macht den Kontext unbrauchbar,
-     darum bekommt jeder Versuch sein eigenes Word.run. */
-  function einsetzen(b64, ganz){
+     nur den Rumpf; opt sind die Import-Optionen oder null. Ein
+     fehlgeschlagener Aufruf macht den Kontext unbrauchbar, darum bekommt
+     jeder Versuch sein eigenes Word.run. */
+  function einsetzen(b64, ganz, opt){
     return Word.run(function(ctx){
-      if(ganz){ ctx.document.insertFileFromBase64(b64, 'Replace'); }
-      else    { ctx.document.body.insertFileFromBase64(b64, 'Replace'); }
+      if(ganz && opt){ ctx.document.insertFileFromBase64(b64, 'Replace', opt); }
+      else if(ganz)  { ctx.document.insertFileFromBase64(b64, 'Replace'); }
+      else           { ctx.document.body.insertFileFromBase64(b64, 'Replace'); }
       return ctx.sync();
     });
   }
@@ -1017,12 +1036,14 @@ function wendeVorlageAn(v, btn){
 
   ladeVorlage(v.datei).then(function(b64){
     if(!kannGanzes) return einsetzen(b64, false).then(function(){ return fertig(false); });
-    return einsetzen(b64, true).then(function(){ return fertig(true); })
-      .catch(function(){
-        /* Word verweigert das Ersetzen des ganzen Dokuments – dann wenigstens
-           den Rumpf. Kommt etwa vor, wenn das Dokument geschützt ist. */
-        return einsetzen(b64, false).then(function(){ return fertig(false); });
-      });
+    /* Erst mit Import-Optionen, dann ohne (ältere Builds kennen sie nicht). */
+    var ganz = einsetzen(b64, true, optionen)
+      .catch(function(){ return einsetzen(b64, true, null); });
+    return ganz.then(function(){ return fertig(true); }, function(){
+      /* Word verweigert das Ersetzen des ganzen Dokuments – dann wenigstens
+         den Rumpf. Kommt etwa vor, wenn das Dokument geschützt ist. */
+      return einsetzen(b64, false).then(function(){ return fertig(false); });
+    });
   }).catch(function(e){
     var t = (e && (e.message || e.description)) || String(e);
     if(/GeneralException|OfficeExtension/i.test(t)){
