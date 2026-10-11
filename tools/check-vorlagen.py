@@ -85,6 +85,26 @@ def namensraeume_pruefen(pfad: pathlib.Path) -> list:
     return probleme
 
 
+def brief_layout_pruefen(pfad: pathlib.Path) -> list:
+    """Vorgaben der Linde fuer den Brief: Absatzabstand 0, Zeilenabstand
+    einfach - in Rumpf, Kopf, Fuss und den Formatvorlagen - und das Logo
+    mittig in der Kopfzeile."""
+    probleme = []
+    z = zipfile.ZipFile(pfad)
+    for name in ("word/document.xml", "word/styles.xml", "word/header1.xml", "word/footer1.xml"):
+        xml = z.read(name).decode("utf-8", "replace")
+        for sp in re.findall(r"<w:spacing[^>]*/>", xml):
+            if (re.search(r'w:(?:before|after)="(?!0")\d+"', sp)
+                    or re.search(r'w:line="(?!240")\d+"', sp)
+                    or ("lineRule" in sp and 'lineRule="auto"' not in sp)):
+                probleme.append("%s: Absatzabstand nicht 0 / Zeilenabstand nicht einfach: %s"
+                                % (name, sp))
+    kopf = z.read("word/header1.xml").decode("utf-8", "replace")
+    if "<w:drawing" not in kopf or '<w:jc w:val="center"' not in kopf:
+        probleme.append("header1.xml: Logo fehlt oder ist nicht zentriert")
+    return probleme
+
+
 def felder_aus_taskpane() -> dict:
     """Aus dem VORLAGEN-Array je Datei die angebotenen Felder lesen."""
     html = TASKPANE.read_text(encoding="utf-8")
@@ -137,6 +157,10 @@ def main() -> int:
 
         for problem in namensraeume_pruefen(pfad):
             fehler.append("%s: %s" % (rel, problem))
+
+        if pfad.name == "brief.docx":
+            for problem in brief_layout_pruefen(pfad):
+                fehler.append("%s: %s" % (rel, problem))
 
     for rel in felder:
         if not (ROOT / rel).exists():
